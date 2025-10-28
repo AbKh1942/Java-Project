@@ -12,6 +12,6 @@ The project uses **JavaFX**, **SUMO**, and the **TraaS API**.
 ## Usage
 Run the project by starting:
 
-## Authorch
+## Author
 John Grosch <br>
 Abdulrehman Saqib Khan
