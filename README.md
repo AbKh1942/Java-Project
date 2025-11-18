@@ -38,3 +38,6 @@ The used technologies in this project are:
   * _Git_
 - External libraries:
 
+## Team Roles
+**_Milestone 1:_**
+John Grosch is responsible for the 
