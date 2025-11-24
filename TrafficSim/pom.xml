@@ -25,12 +25,12 @@
         <dependency>
             <groupId>org.eclipse.sumo</groupId>
             <artifactId>libsumo</artifactId>
-            <version>1.23.1</version>
+            <version>1.24.0</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.sumo</groupId>
             <artifactId>libtraci</artifactId>
-            <version>1.23.1</version>
+            <version>1.24.0</version>
         </dependency>
     </dependencies>
 </project>
