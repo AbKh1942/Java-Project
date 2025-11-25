@@ -5,19 +5,23 @@ import de.uni.trafficsim.view.SimulationFrame;
 import de.uni.trafficsim.view.VisualizationPanel;
 import org.eclipse.sumo.libtraci.*;
 
+import javax.swing.*;
 import java.io.IOException;
 
 public class SumoController implements Runnable {
     private final String sumoConfigPath;
     private final VisualizationPanel view;
     private final RoadNetwork roadNetwork;
+    private final JLabel timeLabel; // Reference to UI label
 
     private volatile boolean running = false;
     private volatile boolean paused = false;
+    private volatile boolean stepRequested = false; // Flag for single step
 
-    public SumoController(String configPath, VisualizationPanel view) {
+    public SumoController(String configPath, VisualizationPanel view, JLabel timeLabel) {
         this.sumoConfigPath = configPath;
         this.view = view;
+        this.timeLabel = timeLabel;
         this.roadNetwork = new RoadNetwork();
     }
 
@@ -31,6 +35,7 @@ public class SumoController implements Runnable {
     public void stop() {
         running = false;
         paused = false;
+        stepRequested = false;
         // Clean close is handled in the run loop
     }
 
@@ -40,6 +45,13 @@ public class SumoController implements Runnable {
 
     public boolean isPaused() {
         return paused;
+    }
+
+    public void stepOnce() {
+        // Only allow manual stepping if we are paused
+        if (paused) {
+            stepRequested = true;
+        }
     }
 
     @Override
@@ -81,10 +93,20 @@ public class SumoController implements Runnable {
             // 4. Simulation Loop (Dynamic Data)
             // ---------------------------------------------------------
             while (running) {
-                if (!paused) {
+                // Execute step if:
+                // 1. Not paused (running normally)
+                // 2. OR Paused but a manual step was requested
+                if (!paused || stepRequested) {
                     Simulation.step();
+                    // 1. Fetch Time
+                    double currentTime = Simulation.getTime();
 
-                    // Fetch Data
+                    // 2. Update UI Label (Must be done on EDT)
+                    SwingUtilities.invokeLater(() ->
+                            timeLabel.setText(String.format("Time: %.1f s", currentTime))
+                    );
+
+                    // 3. Fetch Data
                     SimulationFrame frame = new SimulationFrame();
 
                     StringVector vehIds = Vehicle.getIDList();
@@ -103,6 +125,9 @@ public class SumoController implements Runnable {
                     }
 
                     view.updateFrame(frame);
+
+                    // Reset single step flag immediately after processing
+                    stepRequested = false;
                 }
 
                 // D. Rate Limiting (approx 30 FPS drawing)

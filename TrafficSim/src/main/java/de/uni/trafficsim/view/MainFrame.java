@@ -11,10 +11,12 @@ public class MainFrame {
 
     private final JFrame frame;
     private final VisualizationPanel panel;
+    private final JLabel timeLabel;
     private final SumoController controller;
     private final JToolBar toolbar;
     private final JButton startBtn;
     private final JButton pauseBtn;
+    private final JButton stepBtn; // Added Step Button
     private final JButton stopBtn;
     private final JButton zoomInBtn;
     private final JButton zoomOutBtn;
@@ -29,10 +31,12 @@ public class MainFrame {
     private MainFrame(String sumoConfig) {
         frame = new JFrame("SUMO Custom Controller");
         panel = new VisualizationPanel();
-        controller = new SumoController(sumoConfig, panel);
+        timeLabel = new JLabel("Time: 0.0 s");
+        controller = new SumoController(sumoConfig, panel, timeLabel);
         toolbar = new JToolBar();
         startBtn = new JButton("Start SUMO");
         pauseBtn = new JButton("Pause");
+        stepBtn = new JButton("Step");
         stopBtn = new JButton("Stop");
         zoomInBtn = new JButton(" + ");
         zoomOutBtn = new JButton(" - ");
@@ -45,6 +49,7 @@ public class MainFrame {
 
             setupSimulationButtons();
             setupZoomButtons();
+            setupTimeLabel();
             setupToolbar();
 
             frame.add(toolbar, BorderLayout.NORTH);
@@ -58,27 +63,37 @@ public class MainFrame {
         // Initial states
         pauseBtn.setEnabled(false);
         stopBtn.setEnabled(false);
+        stepBtn.setEnabled(false);
 
         startBtn.addActionListener(e -> {
             controller.start();
             startBtn.setEnabled(false);
             pauseBtn.setEnabled(true);
+            stepBtn.setEnabled(false);
             stopBtn.setEnabled(true);
             pauseBtn.setText("Pause"); // Reset text
         });
 
         pauseBtn.addActionListener(e -> {
             boolean isPaused = controller.isPaused();
+            boolean newState = !isPaused;
             controller.setPaused(!isPaused);
             pauseBtn.setText(isPaused ? "Pause" : "Resume");
+            stepBtn.setEnabled(newState);
         });
 
         stopBtn.addActionListener(e -> {
             controller.stop();
             startBtn.setEnabled(true);
             pauseBtn.setEnabled(false);
+            stepBtn.setEnabled(false);
             stopBtn.setEnabled(false);
             pauseBtn.setText("Pause");
+            timeLabel.setText("Time: 0.0 s"); // Reset time
+        });
+
+        stepBtn.addActionListener(e -> {
+            controller.stepOnce();
         });
     }
 
@@ -89,11 +104,19 @@ public class MainFrame {
         zoomOutBtn.addActionListener(e -> panel.zoomOut());
     }
 
+    private void setupTimeLabel() {
+        timeLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+        timeLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+    }
+
     private void setupToolbar() {
         toolbar.setFloatable(false);
         toolbar.add(startBtn);
         toolbar.add(pauseBtn);
+        toolbar.add(stepBtn);
         toolbar.add(stopBtn);
+        toolbar.addSeparator(); // Separator for Time
+        toolbar.add(timeLabel); // Add Time Label here
         toolbar.addSeparator();
         toolbar.add(new JLabel("Zoom: "));
         toolbar.add(zoomOutBtn);
