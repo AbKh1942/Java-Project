@@ -1,16 +1,19 @@
 package de.uni.trafficsim.controller;
 
 import de.uni.trafficsim.model.RoadNetwork;
+import de.uni.trafficsim.view.DashboardPanel;
 import de.uni.trafficsim.view.SimulationFrame;
 import de.uni.trafficsim.view.VisualizationPanel;
 import org.eclipse.sumo.libtraci.*;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.util.Random;
 
 public class SumoController implements Runnable {
     private final String sumoConfigPath;
     private final VisualizationPanel view;
+    private final DashboardPanel dashboard; // Reference to Dashboard
     private final RoadNetwork roadNetwork;
     private final JLabel timeLabel; // Reference to UI label
 
@@ -18,9 +21,13 @@ public class SumoController implements Runnable {
     private volatile boolean paused = false;
     private volatile boolean stepRequested = false; // Flag for single step
 
-    public SumoController(String configPath, VisualizationPanel view, JLabel timeLabel) {
+    // Random generator for mock data
+    private final Random random = new Random();
+
+    public SumoController(String configPath, VisualizationPanel view, DashboardPanel dashboard, JLabel timeLabel) {
         this.sumoConfigPath = configPath;
         this.view = view;
+        this.dashboard = dashboard;
         this.timeLabel = timeLabel;
         this.roadNetwork = new RoadNetwork();
     }
@@ -123,6 +130,17 @@ public class SumoController implements Runnable {
                             frame.tlsPositions.put(tid, Junction.getPosition(junctions.get(0)));
                         }
                     }
+
+                    // 3. Update Dashboard (MOCK DATA)
+                    // We generate plausible numbers to demonstrate the UI
+                    int mockTotalVehicles = vehIds.size() + random.nextInt(5); // Mix real count with noise
+                    double mockAvgSpeed = 10.0 + random.nextDouble() * 15.0; // Random speed 10-25 m/s
+                    int mockStopped = random.nextInt(mockTotalVehicles / 2 + 1);
+                    double mockCo2 = mockTotalVehicles * (2.5 + random.nextDouble());
+
+                    SwingUtilities.invokeLater(() ->
+                            dashboard.updateStats(mockTotalVehicles, mockAvgSpeed, mockStopped, mockCo2)
+                    );
 
                     view.updateFrame(frame);
 

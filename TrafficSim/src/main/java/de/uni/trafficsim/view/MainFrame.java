@@ -10,6 +10,7 @@ public class MainFrame {
     private static MainFrame instance;
 
     private final JFrame frame;
+    private final DashboardPanel dashboard;
     private final VisualizationPanel panel;
     private final JLabel timeLabel;
     private final SumoController controller;
@@ -31,8 +32,9 @@ public class MainFrame {
     private MainFrame(String sumoConfig) {
         frame = new JFrame("SUMO Custom Controller");
         panel = new VisualizationPanel();
+        dashboard = new DashboardPanel();
         timeLabel = new JLabel("Time: 0.0 s");
-        controller = new SumoController(sumoConfig, panel, timeLabel);
+        controller = new SumoController(sumoConfig, panel, dashboard, timeLabel);
         toolbar = new JToolBar();
         startBtn = new JButton("Start SUMO");
         pauseBtn = new JButton("Pause");
@@ -45,7 +47,7 @@ public class MainFrame {
     public void run() {
         SwingUtilities.invokeLater(() -> {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(800, 600);
+            frame.setSize(1000, 600);
 
             setupSimulationButtons();
             setupZoomButtons();
@@ -54,6 +56,7 @@ public class MainFrame {
 
             frame.add(toolbar, BorderLayout.NORTH);
             frame.add(panel, BorderLayout.CENTER);
+            frame.add(dashboard, BorderLayout.EAST);
 
             frame.setVisible(true);
         });
