@@ -1,0 +1,150 @@
+package de.uni.trafficsim.view;
+
+import de.uni.trafficsim.controller.SumoController;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class MainFrame {
+
+    private static MainFrame instance;
+
+    private final JFrame frame;
+    private final DashboardPanel dashboard;
+    private final VisualizationPanel panel;
+    private final JLabel timeLabel;
+    private final SumoController controller;
+    private final JToolBar toolbar;
+    private final JButton startBtn;
+    private final JButton pauseBtn;
+    private final JButton stepBtn; // Added Step Button
+    private final JButton stopBtn;
+    private final JButton addVehicleBtn;
+    private final JButton switchTlsBtn;
+    private final JButton zoomInBtn;
+    private final JButton zoomOutBtn;
+
+    public static MainFrame getInstance(String sumoConfig) {
+        if (instance == null) {
+            instance = new MainFrame(sumoConfig);
+        }
+        return instance;
+    }
+
+    private MainFrame(String sumoConfig) {
+        frame = new JFrame("SUMO Custom Controller");
+        panel = new VisualizationPanel();
+        dashboard = new DashboardPanel();
+        timeLabel = new JLabel("Time: 0.0 s");
+        controller = new SumoController(sumoConfig, panel, dashboard, timeLabel);
+        toolbar = new JToolBar();
+        startBtn = new JButton("Start SUMO");
+        pauseBtn = new JButton("Pause");
+        stepBtn = new JButton("Step");
+        stopBtn = new JButton("Stop");
+        addVehicleBtn = new JButton("Add Car");
+        switchTlsBtn = new JButton("Switch Lights");
+        zoomInBtn = new JButton(" + ");
+        zoomOutBtn = new JButton(" - ");
+    }
+
+    public void run() {
+        SwingUtilities.invokeLater(() -> {
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(1000, 600);
+
+            setupSimulationButtons();
+            setupZoomButtons();
+            setupTimeLabel();
+            setupToolbar();
+
+            frame.add(toolbar, BorderLayout.NORTH);
+            frame.add(panel, BorderLayout.CENTER);
+            frame.add(dashboard, BorderLayout.EAST);
+
+            frame.setVisible(true);
+        });
+    }
+
+    private void setupSimulationButtons() {
+        // Initial states
+        pauseBtn.setEnabled(false);
+        stopBtn.setEnabled(false);
+        stepBtn.setEnabled(false);
+        addVehicleBtn.setEnabled(false);
+        switchTlsBtn.setEnabled(false);
+
+        startBtn.addActionListener(e -> {
+            controller.start();
+            startBtn.setEnabled(false);
+            pauseBtn.setEnabled(true);
+            stepBtn.setEnabled(false);
+            stopBtn.setEnabled(true);
+            addVehicleBtn.setEnabled(true);
+            switchTlsBtn.setEnabled(true);
+            pauseBtn.setText("Pause"); // Reset text
+        });
+
+        pauseBtn.addActionListener(e -> {
+            boolean isPaused = controller.isPaused();
+            boolean newState = !isPaused;
+            controller.setPaused(!isPaused);
+            pauseBtn.setText(isPaused ? "Pause" : "Resume");
+            stepBtn.setEnabled(newState);
+        });
+
+        stopBtn.addActionListener(e -> {
+            controller.stop();
+            startBtn.setEnabled(true);
+            pauseBtn.setEnabled(false);
+            stepBtn.setEnabled(false);
+            stopBtn.setEnabled(false);
+            addVehicleBtn.setEnabled(false);
+            switchTlsBtn.setEnabled(false);
+            pauseBtn.setText("Pause");
+            timeLabel.setText("Time: 0.0 s"); // Reset time
+        });
+
+        stepBtn.addActionListener(e -> {
+            controller.stepOnce();
+        });
+
+        addVehicleBtn.addActionListener(e -> {
+            System.out.println("Inject vehicle requested.");
+        });
+
+        switchTlsBtn.addActionListener(e -> {
+            controller.switchTrafficLights();
+        });
+    }
+
+    private void setupZoomButtons() {
+        zoomInBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        zoomInBtn.addActionListener(e -> panel.zoomIn());
+        zoomOutBtn.setFont(new Font("Arial", Font.BOLD, 16));
+        zoomOutBtn.addActionListener(e -> panel.zoomOut());
+    }
+
+    private void setupTimeLabel() {
+        timeLabel.setFont(new Font("Monospaced", Font.BOLD, 14));
+        timeLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+    }
+
+    private void setupToolbar() {
+        toolbar.setFloatable(false);
+        toolbar.add(startBtn);
+        toolbar.add(pauseBtn);
+        toolbar.add(stepBtn);
+        toolbar.add(stopBtn);
+        toolbar.add(addVehicleBtn);
+        toolbar.add(switchTlsBtn);
+
+        toolbar.addSeparator(); // Separator for Time
+        toolbar.add(timeLabel);
+
+        toolbar.addSeparator();
+        toolbar.add(new JLabel("Zoom: "));
+        toolbar.add(zoomOutBtn);
+        toolbar.add(zoomInBtn);
+    }
+}

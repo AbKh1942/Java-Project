@@ -1,0 +1,236 @@
+package de.uni.trafficsim.view;
+
+import de.uni.trafficsim.model.RoadNetwork;
+import org.eclipse.sumo.libtraci.Simulation;
+import org.eclipse.sumo.libtraci.TraCIPosition;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
+import java.util.Map;
+
+public class VisualizationPanel extends JPanel implements WindowListener {
+    private RoadNetwork roadNetwork;
+    private SimulationFrame currentFrame;
+
+    // Viewport transforms
+    private double scale = 2.0; // Zoom level
+    private double offsetX = 50;
+    private double offsetY = 600; // Offset to handle coordinate flip
+
+    public VisualizationPanel() {
+        setBackground(Color.DARK_GRAY);
+        // Add MouseListeners here for Pan/Zoom if desired
+        // --- ADDED INTERACTION LOGIC ---
+        MouseAdapter ma = new MouseAdapter() {
+            private Point lastPoint;
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                lastPoint = e.getPoint();
+                requestFocusInWindow(); // Grab focus for keyboard zooming
+            }
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (lastPoint == null) return;
+
+                // Calculate how much the mouse moved
+                int dx = e.getX() - lastPoint.x;
+                int dy = e.getY() - lastPoint.y;
+
+                // Update offsets
+                offsetX += dx;
+                offsetY += dy;
+
+                lastPoint = e.getPoint();
+                repaint();
+            }
+
+            @Override
+            public void mouseWheelMoved(MouseWheelEvent e) {
+                // Zoom towards mouse pointer
+                double zoomFactor = (e.getWheelRotation() < 0) ? 1.1 : (1.0 / 1.1);
+                applyZoom(zoomFactor, e.getX(), e.getY());
+            }
+        };
+
+        addMouseListener(ma);
+        addMouseMotionListener(ma);
+        addMouseWheelListener(ma);
+
+        // --- KEYBOARD SHORTCUTS ---
+        setupKeyBindings();
+    }
+
+    private void setupKeyBindings() {
+        InputMap im = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap am = getActionMap();
+
+        // Zoom In keys: '+', '=', and Numpad Add
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, 0), "zoomIn");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, 0), "zoomIn"); // often same key
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ADD, 0), "zoomIn");
+
+        // Zoom Out keys: '-' and Numpad Subtract
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, 0), "zoomOut");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_SUBTRACT, 0), "zoomOut");
+
+        am.put("zoomIn", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { zoomIn(); }
+        });
+        am.put("zoomOut", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) { zoomOut(); }
+        });
+    }
+
+    // --- Public Zoom Methods for Buttons ---
+    public void zoomIn() {
+        // Button/Key zoom focuses on center of screen
+        applyZoom(1.1, getWidth() / 2.0, getHeight() / 2.0);
+    }
+
+    public void zoomOut() {
+        applyZoom(1.0 / 1.1, getWidth() / 2.0, getHeight() / 2.0);
+    }
+
+    // Core logic to zoom towards a specific point (focusX, focusY)
+    private void applyZoom(double zoomFactor, double focusX, double focusY) {
+        double oldScale = scale;
+        scale *= zoomFactor;
+
+        // Offset adjustment formula:
+        // NewOffset = Focus - (Focus - OldOffset) * (NewScale / OldScale)
+        offsetX = focusX - (focusX - offsetX) * (scale / oldScale);
+        offsetY = focusY - (focusY - offsetY) * (scale / oldScale);
+
+        repaint();
+    }
+
+    public void setRoadNetwork(RoadNetwork net) {
+        this.roadNetwork = net;
+        repaint();
+    }
+
+    public void updateFrame(SimulationFrame frame) {
+        this.currentFrame = frame;
+        repaint();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // --- 1. Coordinate System Setup ---
+        AffineTransform oldTx = g2.getTransform();
+
+        // Translate to offset
+        g2.translate(offsetX, offsetY);
+        // Scale (Zoom)
+        g2.scale(scale, scale);
+        // Flip Y-Axis (SUMO is y-up, Java is y-down)
+        g2.scale(1, -1);
+
+        // --- 2. Draw Roads (Static) ---
+        if (roadNetwork != null) {
+            g2.setColor(Color.LIGHT_GRAY);
+            for (Shape s : roadNetwork.laneShapes.values()) {
+                g2.fill(s); // Fill lane
+                g2.setColor(Color.WHITE);
+                g2.draw(s); // Outline lane
+                g2.setColor(Color.LIGHT_GRAY);
+            }
+        }
+
+        // --- 3. Draw Dynamic Entities ---
+        if (currentFrame != null) {
+            // Draw Traffic Lights
+            for (Map.Entry<String, TraCIPosition> entry : currentFrame.tlsPositions.entrySet()) {
+                String id = entry.getKey();
+                TraCIPosition pos = entry.getValue();
+                String state = currentFrame.tlsStates.get(id);
+
+                drawTrafficLight(g2, pos.getX(), pos.getY(), state);
+            }
+
+            // Draw Vehicles
+            for (Map.Entry<String, TraCIPosition> entry : currentFrame.vehiclePositions.entrySet()) {
+                String vid = entry.getKey();
+                TraCIPosition pos = entry.getValue();
+                Double angle = currentFrame.vehicleAngles.get(vid);
+
+                drawVehicle(g2, pos.getX(), pos.getY(), angle != null ? angle : 0);
+            }
+        }
+
+        g2.setTransform(oldTx);
+
+        // --- 4. Draw HUD ---
+        g2.setColor(Color.YELLOW);
+        g2.setFont(new Font("Monospaced", Font.BOLD, 12));
+        g2.drawString("Controls: Drag to Pan | Scroll or +/- to Zoom", 10, 20);
+        g2.drawString(String.format("Zoom: %.2fx", scale), 10, 35);
+    }
+
+    private void drawVehicle(Graphics2D g2, double x, double y, double angle) {
+        AffineTransform tx = g2.getTransform();
+        g2.translate(x, y);
+        // Rotate vehicle (SUMO 0 is North/Up, Java 0 is East/Right)
+        // We flip Y axis previously, so we must adjust rotation carefully.
+        // Standard mapping: Java Rotation = Math.toRadians(90 - SumoAngle)
+        g2.rotate(Math.toRadians(90 - angle));
+
+        g2.setColor(Color.CYAN);
+        Path2D veh = new Path2D.Double();
+        // Simple car shape (5m long, 2m wide approx)
+        veh.moveTo(2.5, 0);
+        veh.lineTo(-2.5, 1.25);
+        veh.lineTo(-2.5, -1.25);
+        veh.closePath();
+        g2.fill(veh);
+
+        g2.setTransform(tx);
+    }
+
+    private void drawTrafficLight(Graphics2D g2, double x, double y, String state) {
+        // Simple visualization: A circle at the junction center
+        // Color depends on the first character of the state string (G, g, r, y, etc.)
+        char firstSignal = !state.isEmpty() ? state.charAt(0) : 'r';
+
+        if (firstSignal == 'G' || firstSignal == 'g') g2.setColor(Color.GREEN);
+        else if (firstSignal == 'y' || firstSignal == 'Y') g2.setColor(Color.YELLOW);
+        else g2.setColor(Color.RED);
+
+        // Draw circle (radius 2m)
+        g2.fillOval((int)(x - 2), (int)(y - 2), 4, 4);
+    }
+
+    @Override
+    public void windowOpened(WindowEvent e) {}
+
+    @Override
+    public void windowClosing(WindowEvent e) {}
+
+    @Override
+    public void windowClosed(WindowEvent e) {
+        Simulation.close();
+    }
+
+    @Override
+    public void windowIconified(WindowEvent e) {}
+
+    @Override
+    public void windowDeiconified(WindowEvent e) {}
+
+    @Override
+    public void windowActivated(WindowEvent e) {}
+
+    @Override
+    public void windowDeactivated(WindowEvent e) {}
+}
