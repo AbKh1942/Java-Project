@@ -20,6 +20,7 @@ public class SumoController implements Runnable {
     private volatile boolean running = false;
     private volatile boolean paused = false;
     private volatile boolean stepRequested = false; // Flag for single step
+    private volatile boolean tlsSwitchRequested = false; // New flag for TLS control
 
     // Random generator for mock data
     private final Random random = new Random();
@@ -43,6 +44,7 @@ public class SumoController implements Runnable {
         running = false;
         paused = false;
         stepRequested = false;
+        tlsSwitchRequested = false;
         // Clean close is handled in the run loop
     }
 
@@ -59,6 +61,11 @@ public class SumoController implements Runnable {
         if (paused) {
             stepRequested = true;
         }
+    }
+
+    public void switchTrafficLights() {
+        // Request a switch on the next simulation update loop
+        tlsSwitchRequested = true;
     }
 
     @Override
@@ -104,6 +111,21 @@ public class SumoController implements Runnable {
                 // 1. Not paused (running normally)
                 // 2. OR Paused but a manual step was requested
                 if (!paused || stepRequested) {
+                    // --- Handle TLS Switch Request ---
+                    if (tlsSwitchRequested) {
+                        try {
+                            StringVector tlsIds = TrafficLight.getIDList();
+                            for (String id : tlsIds) {
+                                // Setting duration to 0 forces immediate transition to next phase
+                                TrafficLight.setPhaseDuration(id, 0.0);
+                            }
+                            System.out.println("TLS Phase switch requested.");
+                        } catch (Exception e) {
+                            System.err.println("Error switching TLS: " + e.getMessage());
+                        }
+                        tlsSwitchRequested = false; // Reset flag
+                    }
+
                     Simulation.step();
                     // 1. Fetch Time
                     double currentTime = Simulation.getTime();

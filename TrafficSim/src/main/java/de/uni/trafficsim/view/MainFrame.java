@@ -19,6 +19,8 @@ public class MainFrame {
     private final JButton pauseBtn;
     private final JButton stepBtn; // Added Step Button
     private final JButton stopBtn;
+    private final JButton addVehicleBtn;
+    private final JButton switchTlsBtn;
     private final JButton zoomInBtn;
     private final JButton zoomOutBtn;
 
@@ -40,6 +42,8 @@ public class MainFrame {
         pauseBtn = new JButton("Pause");
         stepBtn = new JButton("Step");
         stopBtn = new JButton("Stop");
+        addVehicleBtn = new JButton("Add Car");
+        switchTlsBtn = new JButton("Switch Lights");
         zoomInBtn = new JButton(" + ");
         zoomOutBtn = new JButton(" - ");
     }
@@ -67,6 +71,8 @@ public class MainFrame {
         pauseBtn.setEnabled(false);
         stopBtn.setEnabled(false);
         stepBtn.setEnabled(false);
+        addVehicleBtn.setEnabled(false);
+        switchTlsBtn.setEnabled(false);
 
         startBtn.addActionListener(e -> {
             controller.start();
@@ -74,6 +80,8 @@ public class MainFrame {
             pauseBtn.setEnabled(true);
             stepBtn.setEnabled(false);
             stopBtn.setEnabled(true);
+            addVehicleBtn.setEnabled(true);
+            switchTlsBtn.setEnabled(true);
             pauseBtn.setText("Pause"); // Reset text
         });
 
@@ -91,12 +99,22 @@ public class MainFrame {
             pauseBtn.setEnabled(false);
             stepBtn.setEnabled(false);
             stopBtn.setEnabled(false);
+            addVehicleBtn.setEnabled(false);
+            switchTlsBtn.setEnabled(false);
             pauseBtn.setText("Pause");
             timeLabel.setText("Time: 0.0 s"); // Reset time
         });
 
         stepBtn.addActionListener(e -> {
             controller.stepOnce();
+        });
+
+        addVehicleBtn.addActionListener(e -> {
+            System.out.println("Inject vehicle requested.");
+        });
+
+        switchTlsBtn.addActionListener(e -> {
+            controller.switchTrafficLights();
         });
     }
 
@@ -118,8 +136,12 @@ public class MainFrame {
         toolbar.add(pauseBtn);
         toolbar.add(stepBtn);
         toolbar.add(stopBtn);
+        toolbar.add(addVehicleBtn);
+        toolbar.add(switchTlsBtn);
+
         toolbar.addSeparator(); // Separator for Time
-        toolbar.add(timeLabel); // Add Time Label here
+        toolbar.add(timeLabel);
+
         toolbar.addSeparator();
         toolbar.add(new JLabel("Zoom: "));
         toolbar.add(zoomOutBtn);
