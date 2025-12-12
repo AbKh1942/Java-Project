@@ -22,6 +22,11 @@ public class SumoController implements Runnable {
     private volatile boolean stepRequested = false; // Flag for single step
     private volatile boolean tlsSwitchRequested = false; // New flag for TLS control
 
+    //new for stress test
+    private volatile boolean stressTestRequested = false; // Stress test requested
+    private volatile int stressVehiclesLeft = 0; // amount of cars generated
+    private int stressVehicleCounter = 0; // Counter for vehicle ID
+
     // Random generator for mock data
     private final Random random = new Random();
 
@@ -46,6 +51,10 @@ public class SumoController implements Runnable {
         stepRequested = false;
         tlsSwitchRequested = false;
         // Clean close is handled in the run loop
+
+        //new stress test
+        stressTestRequested = false;
+        stressVehiclesLeft = 0;
     }
 
     public void setPaused(boolean paused) {
@@ -66,6 +75,26 @@ public class SumoController implements Runnable {
     public void switchTrafficLights() {
         // Request a switch on the next simulation update loop
         tlsSwitchRequested = true;
+    }
+
+    //new function for stress Test
+    public void runStressTest() {
+        //System.out.println("Stress test triggert");
+        stressVehiclesLeft = 100;
+        stressTestRequested = true;
+    }
+
+    //new function for stress Test
+    private String getAnyRouteId() {
+        try {
+            StringVector routes = Route.getIDList();
+            if (routes != null && !routes.isEmpty()) {
+                return routes.get(0);
+            }
+        } catch (Exception e) {
+
+        }
+        return null;
     }
 
     @Override
@@ -124,6 +153,26 @@ public class SumoController implements Runnable {
                             System.err.println("Error switching TLS: " + e.getMessage());
                         }
                         tlsSwitchRequested = false; // Reset flag
+                    }
+
+                    // --- Handle Stress Test Request ---
+                    if (stressTestRequested && stressVehiclesLeft > 0) {
+                        try {
+                            String routeId = getAnyRouteId();
+                            if (routeId != null) {
+                                String vehId = "stressVeh_" + stressVehicleCounter++;
+                                Vehicle.add(vehId, routeId, "DEFAULT_VEHTYPE", "now", "best", "0", "0");
+                                stressVehiclesLeft--;
+
+                                if (stressVehiclesLeft == 0) {
+                                    stressTestRequested = false;
+                                }
+                            } else {
+                                stressTestRequested = false;
+                            }
+                        } catch (Exception e) {
+                            stressTestRequested = false;
+                        }
                     }
 
                     Simulation.step();
