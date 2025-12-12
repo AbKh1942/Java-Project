@@ -23,10 +23,11 @@ Vehicle instances.
 public class VehicleManager {                                                   //class for handling all vehicle entities in our simulation, used by SimulationController
     private final Map<String, Vehicle> vehicles = new ConcurrentHashMap<>();    //Map: Key = id (String), value = Vehicle-Object. Final: Map-reference cannot be changed, but the map-contents can be changed (add/remove)
 
-    public void addVehicle(Vehicle vehicle) {                                   //injecting new vehicle
+    public void addVehicle(Vehicle vehicle, String routeId) {                   //injecting new vehicle
         if (vehicle == null) {                                                  //makes sure input cant be NULL
             throw new IllegalArgumentException("vehicle must not be null");
         }
+        vehicle.spawnVehicle(routeId);
         vehicles.put(vehicle.getId(), vehicle);                                 //calls vehicles.put() method from JAva-Map to add a new entry(id, vehicle) to the Hashmap
     }
 
@@ -35,8 +36,8 @@ public class VehicleManager {                                                   
     }
 
     public Map<String, Vehicle> getAllVehicles() {
-        return Collections.unmodifiableMap(vehicles);
-    }
+        return Collections.unmodifiableMap(vehicles);                           //unmodifiableMaps -> can only be read, not changed
+    }                                                                           //Collections allows to store multiple Objects (Java Standard Library)
 
     /*
     Placeholder for logic for getting vehicles by filter

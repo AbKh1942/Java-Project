@@ -43,7 +43,7 @@ public class Vehicle {                              //defining new class Vehicle
     }
 
     public String getRoute() {
-        route = org.eclipse.sumo.libtraci.Vehicle.getRouteID(id); //calls internal getRoute method in SUMO. returns route id string.
+        route = org.eclipse.sumo.libtraci.Vehicle.getRouteID(id); //calls internal getRoute method in SUMO/libtraci. returns route id string.
         return route;
     }
 
@@ -55,26 +55,32 @@ public class Vehicle {                              //defining new class Vehicle
 
     //Setter-Methods
     public void setSpeed(double speed) {
-        org.eclipse.sumo.libtraci.Vehicle.setSpeed(id, speed); //calls internal setSpeed method in SUMO -> changes speed directly in SUMO.
+        org.eclipse.sumo.libtraci.Vehicle.setSpeed(id, speed); //calls internal setSpeed method in SUMO/libtraci -> changes speed directly in SUMO.
         this.speed = speed; //saves speed value to current vehicle instance
     }
 
     public void setRoute(String routeId) {
         Objects.requireNonNull(routeId, "routeId must not be null"); //internal Java standard Class/method, checks if the value is null -> if yes, throws error (NullPointerException)
-        org.eclipse.sumo.libtraci.Vehicle.setRouteID(id, routeId); //calls internal setRouteID method in SUMO -> changes route directly in SUMO
+        org.eclipse.sumo.libtraci.Vehicle.setRouteID(id, routeId); //calls internal setRouteID method in SUMO/libtraci -> changes route directly in SUMO
         this.route = routeId;
     }
 
     public void setColor(String colorHex) {
         TraCIColor sumoColor = parseColor(colorHex); //parseColor does the opposite of formatColor, turns Hex-RGBstring into TraCI-RGB-Object, so we can set the color internally in the TraCI-Object
-        org.eclipse.sumo.libtraci.Vehicle.setColor(id, sumoColor); //calls internal setColor method in SUMO
+        org.eclipse.sumo.libtraci.Vehicle.setColor(id, sumoColor); //calls internal setColor method in SUMO/libtraci
         this.color = formatColor(sumoColor); //saves the color as Hex-string in our java wrapper vehicle instance
+    }
+
+    //method for adding a new vehicle into the simulation
+    public void spawnVehicle(String routeId) {
+        org.eclipse.sumo.libtraci.Vehicle.add(id, routeId); //calls internal add() method in libtraci
+        this.route = routeId;
     }
 
     //formatColor method to interpret TraCIColor-Object as Hex-RGB-format-String
     private static String formatColor(TraCIColor color) {
         return String.format("#%02X%02X%02X", color.getR(), color.getG(), color.getB()); //gets the internal red, green and blue values from the TraCI Color object and formats it to  6 digit Hex-string (fill with leading 0's if neccessary)
-    }                                                                                    //getR() etc come from TraaS
+    }                                                                                    //getR() etc come from libtraci
 
     //parseColor method to translate Hex-RGB-format-String into TraCIColor-Object
     //substring and parseInt come from java-Standardclasses
