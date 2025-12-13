@@ -4,6 +4,8 @@ import de.uni.trafficsim.controller.SumoController;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainFrame {
 
@@ -37,6 +39,7 @@ public class MainFrame {
         dashboard = new DashboardPanel();
         timeLabel = new JLabel("Time: 0.0 s");
         controller = new SumoController(sumoConfig, panel, dashboard, timeLabel);
+        panel.setController(controller);
         toolbar = new JToolBar();
         startBtn = new JButton("Start SUMO");
         pauseBtn = new JButton("Pause");
@@ -114,7 +117,7 @@ public class MainFrame {
         });
 
         switchTlsBtn.addActionListener(e -> {
-            controller.switchTrafficLights();
+//            controller.switchTrafficLights();
         });
     }
 

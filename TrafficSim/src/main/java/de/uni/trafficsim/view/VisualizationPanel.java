@@ -1,6 +1,8 @@
 package de.uni.trafficsim.view;
 
+import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.model.RoadNetwork;
+import de.uni.trafficsim.model.TrafficLightWrapper;
 import org.eclipse.sumo.libtraci.Simulation;
 import org.eclipse.sumo.libtraci.TraCIPosition;
 
@@ -14,6 +16,7 @@ import java.util.Map;
 public class VisualizationPanel extends JPanel implements WindowListener {
     private RoadNetwork roadNetwork;
     private SimulationFrame currentFrame;
+    private SumoController controller; // Reference to controller for callbacks
 
     // Viewport transforms
     private double scale = 2.0; // Zoom level
@@ -55,6 +58,14 @@ public class VisualizationPanel extends JPanel implements WindowListener {
                 double zoomFactor = (e.getWheelRotation() < 0) ? 1.1 : (1.0 / 1.1);
                 applyZoom(zoomFactor, e.getX(), e.getY());
             }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // Handle Traffic Light Clicking
+                if (currentFrame != null && controller != null) {
+                    checkTlsClick(e.getX(), e.getY());
+                }
+            }
         };
 
         addMouseListener(ma);
@@ -63,6 +74,31 @@ public class VisualizationPanel extends JPanel implements WindowListener {
 
         // --- KEYBOARD SHORTCUTS ---
         setupKeyBindings();
+    }
+
+    public void setController(SumoController c) {
+        this.controller = c;
+    }
+
+    private void checkTlsClick(int screenX, int screenY) {
+        // Convert Screen to World
+        double worldX = (screenX - offsetX) / scale;
+        double worldY = (offsetY - screenY) / scale;
+
+        double clickRadius = 5.0; // Meters
+
+        if (currentFrame.trafficLights != null) {
+            for (TrafficLightWrapper light : currentFrame.trafficLights) {
+                TraCIPosition pos = light.getPosition();
+                double dist = Math.sqrt(Math.pow(pos.getX() - worldX, 2) + Math.pow(pos.getY() - worldY, 2));
+
+                if (dist <= clickRadius) {
+                    System.out.println("Clicked TLS: " + light.getId());
+                    controller.switchTrafficLight(light);
+                    return;
+                }
+            }
+        }
     }
 
     private void setupKeyBindings() {
@@ -151,12 +187,8 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         // --- 3. Draw Dynamic Entities ---
         if (currentFrame != null) {
             // Draw Traffic Lights
-            for (Map.Entry<String, TraCIPosition> entry : currentFrame.tlsPositions.entrySet()) {
-                String id = entry.getKey();
-                TraCIPosition pos = entry.getValue();
-                String state = currentFrame.tlsStates.get(id);
-
-                drawTrafficLight(g2, pos.getX(), pos.getY(), state);
+            for (TrafficLightWrapper tl: currentFrame.trafficLights) {
+                drawTrafficLight(g2, tl);
             }
 
             // Draw Vehicles
@@ -198,17 +230,22 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         g2.setTransform(tx);
     }
 
-    private void drawTrafficLight(Graphics2D g2, double x, double y, String state) {
+    private void drawTrafficLight(Graphics2D g2, TrafficLightWrapper tl) {
         // Simple visualization: A circle at the junction center
-        // Color depends on the first character of the state string (G, g, r, y, etc.)
-        char firstSignal = !state.isEmpty() ? state.charAt(0) : 'r';
-
-        if (firstSignal == 'G' || firstSignal == 'g') g2.setColor(Color.GREEN);
-        else if (firstSignal == 'y' || firstSignal == 'Y') g2.setColor(Color.YELLOW);
-        else g2.setColor(Color.RED);
-
-        // Draw circle (radius 2m)
-        g2.fillOval((int)(x - 2), (int)(y - 2), 4, 4);
+        g2.setColor(tl.getColor());
+        g2.fillOval(
+                (int)(tl.getPosition().getX() - 3),
+                (int)(tl.getPosition().getY() - 3),
+                6,
+                6
+        );
+        g2.setColor(Color.BLACK);
+        g2.drawOval(
+                (int)(tl.getPosition().getX() - 3),
+                (int)(tl.getPosition().getY() - 3),
+                6,
+                6
+        );
     }
 
     @Override

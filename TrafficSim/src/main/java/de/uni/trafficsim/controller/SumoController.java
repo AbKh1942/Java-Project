@@ -1,6 +1,7 @@
 package de.uni.trafficsim.controller;
 
 import de.uni.trafficsim.model.RoadNetwork;
+import de.uni.trafficsim.model.TrafficLightWrapper;
 import de.uni.trafficsim.view.DashboardPanel;
 import de.uni.trafficsim.view.SimulationFrame;
 import de.uni.trafficsim.view.VisualizationPanel;
@@ -8,7 +9,7 @@ import org.eclipse.sumo.libtraci.*;
 
 import javax.swing.*;
 import java.io.IOException;
-import java.util.Random;
+import java.util.*;
 
 public class SumoController implements Runnable {
     private final String sumoConfigPath;
@@ -20,10 +21,12 @@ public class SumoController implements Runnable {
     private volatile boolean running = false;
     private volatile boolean paused = false;
     private volatile boolean stepRequested = false; // Flag for single step
-    private volatile boolean tlsSwitchRequested = false; // New flag for TLS control
 
     // Random generator for mock data
     private final Random random = new Random();
+
+    // Queue for specific TLS switches
+    private final Set<TrafficLightWrapper> tlsSwitchRequests = new HashSet<>();
 
     public SumoController(String configPath, VisualizationPanel view, DashboardPanel dashboard, JLabel timeLabel) {
         this.sumoConfigPath = configPath;
@@ -44,7 +47,6 @@ public class SumoController implements Runnable {
         running = false;
         paused = false;
         stepRequested = false;
-        tlsSwitchRequested = false;
         // Clean close is handled in the run loop
     }
 
@@ -63,9 +65,10 @@ public class SumoController implements Runnable {
         }
     }
 
-    public void switchTrafficLights() {
-        // Request a switch on the next simulation update loop
-        tlsSwitchRequested = true;
+    // Called by the View when user clicks a specific light
+    public synchronized void switchTrafficLight(TrafficLightWrapper tl) {
+        tlsSwitchRequests.add(tl);
+        System.out.println("Queued switch for TLS: " + tl.getId());
     }
 
     @Override
@@ -111,19 +114,20 @@ public class SumoController implements Runnable {
                 // 1. Not paused (running normally)
                 // 2. OR Paused but a manual step was requested
                 if (!paused || stepRequested) {
-                    // --- Handle TLS Switch Request ---
-                    if (tlsSwitchRequested) {
-                        try {
-                            StringVector tlsIds = TrafficLight.getIDList();
-                            for (String id : tlsIds) {
-                                // Setting duration to 0 forces immediate transition to next phase
-                                TrafficLight.setPhaseDuration(id, 0.0);
+                    // --- Process Individual TLS Requests ---
+                    if (!tlsSwitchRequests.isEmpty()) {
+                        synchronized(this) {
+                            for (TrafficLightWrapper tl : tlsSwitchRequests) {
+                                try {
+                                    // Forces immediate transition to next phase
+                                    TrafficLight.setPhaseDuration(tl.getId(), 0.0);
+                                    System.out.println("Switched TLS " + tl.getId());
+                                } catch (Exception e) {
+                                    System.err.println("Error switching TLS " + tl.getId() + ": " + e.getMessage());
+                                }
                             }
-                            System.out.println("TLS Phase switch requested.");
-                        } catch (Exception e) {
-                            System.err.println("Error switching TLS: " + e.getMessage());
+                            tlsSwitchRequests.clear();
                         }
-                        tlsSwitchRequested = false; // Reset flag
                     }
 
                     Simulation.step();
@@ -146,10 +150,16 @@ public class SumoController implements Runnable {
 
                     StringVector tlsIds = TrafficLight.getIDList();
                     for (String tid : tlsIds) {
-                        frame.tlsStates.put(tid, TrafficLight.getRedYellowGreenState(tid));
-                        StringVector junctions = TrafficLight.getControlledJunctions(tid);
-                        if (!junctions.isEmpty()) {
-                            frame.tlsPositions.put(tid, Junction.getPosition(junctions.get(0)));
+                        String state = TrafficLight.getRedYellowGreenState(tid);
+                        List<TraCIPosition> positions = roadNetwork.tlsStopLines.get(tid);
+                        // Zip the state string with the positions
+                        if (positions != null) {
+                            int count = Math.min(state.length(), positions.size());
+                            for (int k = 0; k < count; k++) {
+                                frame.trafficLights.add(
+                                        new TrafficLightWrapper(tid, positions.get(k), state.charAt(k))
+                                );
+                            }
                         }
                     }
 
