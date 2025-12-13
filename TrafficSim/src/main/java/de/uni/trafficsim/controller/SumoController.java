@@ -118,13 +118,7 @@ public class SumoController implements Runnable {
                     if (!tlsSwitchRequests.isEmpty()) {
                         synchronized(this) {
                             for (TrafficLightWrapper tl : tlsSwitchRequests) {
-                                try {
-                                    // Forces immediate transition to next phase
-                                    TrafficLight.setPhaseDuration(tl.getId(), 0.0);
-                                    System.out.println("Switched TLS " + tl.getId());
-                                } catch (Exception e) {
-                                    System.err.println("Error switching TLS " + tl.getId() + ": " + e.getMessage());
-                                }
+                                tl.changeState();
                             }
                             tlsSwitchRequests.clear();
                         }

@@ -1,6 +1,7 @@
 package de.uni.trafficsim.model;
 
 import org.eclipse.sumo.libtraci.TraCIPosition;
+import org.eclipse.sumo.libtraci.TrafficLight;
 
 import java.awt.*;
 
@@ -34,6 +35,16 @@ public class TrafficLightWrapper {
 
     public Color getColor() {
         return state.getColor();
+    }
+
+    public void changeState() {
+        try {
+            // Forces immediate transition to next phase
+            TrafficLight.setPhaseDuration(id, 0.0);
+            System.out.println("Switched TLS " + id);
+        } catch (Exception e) {
+            System.err.println("Error switching TLS " + id + ": " + e.getMessage());
+        }
     }
 
     @Override
