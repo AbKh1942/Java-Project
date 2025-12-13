@@ -20,7 +20,7 @@ public class Vehicle {                              //defining new class Vehicle
     private String color;                           //Color as Hex-number string in RGB format
 
     public Vehicle(String id) {                     //Konstruktor, is called when new vehicle is created
-        if (id == null || id.isBlank()) {           //checks that id is not empty. id == null, checks if nothing has been handed over, id.isBlank() makes sure empty strings like "   " cant be put in.
+        if (id == null || id.isEmpty()) {           //checks that id is not empty. id == null, checks if nothing has been handed over, id.isBlank() makes sure empty strings like "   " cant be put in.
             throw new IllegalArgumentException("Vehicle id must not be empty"); //Id cannot be empty!
         }
         this.id = id;
