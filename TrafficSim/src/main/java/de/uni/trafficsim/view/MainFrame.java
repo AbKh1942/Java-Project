@@ -126,7 +126,8 @@ public class MainFrame {
         });
 
         addVehicleBtn.addActionListener(e -> {
-            System.out.println("Inject vehicle requested.");
+            AddVehicleDialog dialog = new AddVehicleDialog(frame, controller);
+            dialog.setVisible(true);
         });
 
         stressTestBtn.addActionListener(e -> {

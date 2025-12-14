@@ -2,6 +2,7 @@ package de.uni.trafficsim.controller;
 
 import de.uni.trafficsim.model.RoadNetwork;
 import de.uni.trafficsim.model.TrafficLightWrapper;
+import de.uni.trafficsim.model.VehicleWrapper;
 import de.uni.trafficsim.view.DashboardPanel;
 import de.uni.trafficsim.model.SimulationFrame;
 import de.uni.trafficsim.view.VisualizationPanel;
@@ -17,6 +18,8 @@ public class SumoController implements Runnable {
     private final DashboardPanel dashboard; // Reference to Dashboard
     private final RoadNetwork roadNetwork;
     private final JLabel timeLabel; // Reference to UI label
+
+    private SimulationFrame simulationFrame;
 
     private volatile boolean running = false;
     private volatile boolean paused = false;
@@ -65,10 +68,14 @@ public class SumoController implements Runnable {
 
     // Helpers for the Dialog
     public List<String> getAvailableRoutes() {
-        return roadNetwork.getAvailableRoutes();
+        return simulationFrame.availableRoutes;
     }
     public List<String> getAvailableTypes() {
-        return roadNetwork.getAvailableTypes();
+        return simulationFrame.availableTypes;
+    }
+
+    public SimulationFrame getSimulationFrame() {
+        return simulationFrame;
     }
 
     public boolean isPaused() {
@@ -185,19 +192,23 @@ public class SumoController implements Runnable {
                     fetchSimulationTime();
 
                     // 2. Fetch Data
-                    SimulationFrame frame = new SimulationFrame();
+                    simulationFrame = new SimulationFrame();
+
+                    // Cache available routes and vehicle types for dropdowns
+                    simulationFrame.availableRoutes.addAll(Route.getIDList());
+                    simulationFrame.availableTypes.addAll(VehicleType.getIDList());
 
                     StringVector vehIds = Vehicle.getIDList();
-                    fetchVehicles(frame, vehIds);
+                    fetchVehicles(simulationFrame, vehIds);
 
                     StringVector tlsIds = TrafficLight.getIDList();
-                    fetchTrafficLights(frame, tlsIds);
+                    fetchTrafficLights(simulationFrame, tlsIds);
 
                     // 3. Update Dashboard (MOCK DATA)
                     updateStatDashboard(vehIds);
 
                     // 4. Update our map
-                    view.updateFrame(frame);
+                    view.updateFrame(simulationFrame);
 
                     // Reset single step flag immediately after processing
                     stepRequested = false;
@@ -232,8 +243,18 @@ public class SumoController implements Runnable {
 
     private void fetchVehicles(SimulationFrame frame, StringVector vehIds) {
         for (String vid : vehIds) {
-            frame.vehiclePositions.put(vid, Vehicle.getPosition(vid));
-            frame.vehicleAngles.put(vid, Vehicle.getAngle(vid));
+            VehicleWrapper vehicle = new VehicleWrapper(
+                    vid,
+                    Vehicle.getPosition(vid),
+                    Vehicle.getAngle(vid),
+                    Vehicle.getSpeed(vid),
+                    Vehicle.getLength(vid),
+                    Vehicle.getRouteID(vid),
+                    Vehicle.getColor(vid)
+            );
+            frame.vehicleManager.addVehicle(vehicle);
+//            frame.vehiclePositions.put(vid, Vehicle.getPosition(vid));
+//            frame.vehicleAngles.put(vid, Vehicle.getAngle(vid));
         }
     }
 

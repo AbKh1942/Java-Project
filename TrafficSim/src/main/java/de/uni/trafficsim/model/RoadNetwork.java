@@ -15,10 +15,6 @@ public class RoadNetwork {
     // Map: TLS_ID -> List of Stop Line Positions (one per controlled lane index)
     private final Map<String, List<TraCIPosition>> tlsStopLines = new HashMap<>();
 
-    // Cache for UI dropdowns
-    private final List<String> availableRoutes = new ArrayList<>();
-    private final List<String> availableTypes = new ArrayList<>();
-
     public Map<String, Shape> getLaneShapes() {
         return laneShapes;
     }
@@ -27,24 +23,12 @@ public class RoadNetwork {
         return tlsStopLines;
     }
 
-    public List<String> getAvailableRoutes() {
-        return availableRoutes;
-    }
-
-    public List<String> getAvailableTypes() {
-        return availableTypes;
-    }
-
     public void loadFromSumo() {
         // 1. Load Lane Geometries
         loadLanes();
 
         // 2. Load Traffic Light Geometries
         loadTrafficLights();
-
-        // 3. Cache available routes and vehicle types for dropdowns
-        availableRoutes.addAll(Route.getIDList());
-        availableTypes.addAll(VehicleType.getIDList());
     }
 
     private void loadLanes() {

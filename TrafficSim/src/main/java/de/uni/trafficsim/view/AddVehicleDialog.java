@@ -1,25 +1,25 @@
 package de.uni.trafficsim.view;
 
 import de.uni.trafficsim.controller.SumoController;
+import de.uni.trafficsim.model.VehicleWrapper;
 import org.eclipse.sumo.libtraci.TraCIColor;
 import org.eclipse.sumo.libtraci.Vehicle;
 import org.eclipse.sumo.libtraci.VehicleType;
 
 import javax.swing.*;
-//import java.awt.*;
 import java.awt.*;
 import java.util.List;
 
 public class AddVehicleDialog extends JDialog {
     private final SumoController controller;
-    private JComboBox<String> routeCombo;
-    private JComboBox<String> typeCombo;
-    private JPanel newTypePanel;
-    private JTextField newTypeIdField;
-    private JSpinner lengthSpinner;
-    private JSpinner speedSpinner;
-    private JButton colorButton;
-    private Color selectedColor = Color.YELLOW;
+    private final JComboBox<String> routeCombo;
+    private final JComboBox<String> typeCombo;
+    private final JPanel newTypePanel;
+    private final JTextField newTypeIdField;
+    private final JSpinner lengthSpinner;
+    private final JSpinner speedSpinner;
+    private final JButton colorButton;
+    private Color selectedColor = Color.CYAN;
 
     public AddVehicleDialog(Frame owner, SumoController controller) {
         super(owner, "Inject New Vehicle", true);
@@ -142,28 +142,40 @@ public class AddVehicleDialog extends JDialog {
 
         // Schedule the Injection Task
         controller.scheduleTask(() -> {
-            try {
-                if (isNewType) {
-                    // Try to copy from the first available type or default
-                    String baseType = controller.getAvailableTypes().isEmpty() ? "DEFAULT_VEHTYPE" : controller.getAvailableTypes().get(0);
-                    // Create new type by copying base
-                    VehicleType.copy(baseType, finalTypeId);
-                    VehicleType.setLength(finalTypeId, length);
-                    VehicleType.setMaxSpeed(finalTypeId, speed);
-                    VehicleType.setColor(finalTypeId, new TraCIColor(c.getRed(), c.getGreen(), c.getBlue(), 255));
-                    System.out.println("Created new type: " + finalTypeId);
-                }
-
-                Vehicle.add(vehId, routeId, finalTypeId, "now", "first", "0", "0");
-                Vehicle.setColor(vehId, new TraCIColor(c.getRed(), c.getGreen(), c.getBlue(), 255));
-                System.out.println("Injected vehicle " + vehId + " on route " + routeId);
-
-            } catch (Exception ex) {
-                System.err.println("Failed to inject vehicle: " + ex.getMessage());
-                ex.printStackTrace();
-            }
+            addCarToSimulation(isNewType, finalTypeId, vehId, routeId, length, speed, c);
         });
 
         dispose();
+    }
+
+    private void addCarToSimulation(
+            boolean isNewType,
+            String finalTypeId,
+            String vehId,
+            String routeId,
+            double length,
+            double speed,
+            Color c
+    ) {
+        try {
+            if (isNewType) {
+                // Try to copy from the first available type or default
+                String baseType = controller.getAvailableTypes().isEmpty() ? "DEFAULT_VEHTYPE" : controller.getAvailableTypes().get(0);
+                // Create new type by copying base
+                VehicleType.copy(baseType, finalTypeId);
+
+                VehicleType.setLength(finalTypeId, length);
+                VehicleType.setMaxSpeed(finalTypeId, speed);
+                VehicleType.setColor(finalTypeId, new TraCIColor(c.getRed(), c.getGreen(), c.getBlue(), 255));
+
+                System.out.println("Created new type: " + finalTypeId);
+            }
+
+            VehicleWrapper vehicleWrapper = new VehicleWrapper(vehId, routeId, c);
+            controller.getSimulationFrame().vehicleManager.addVehicleToSimulation(vehicleWrapper, finalTypeId);
+        } catch (Exception ex) {
+            System.err.println("Failed to inject vehicle: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 }

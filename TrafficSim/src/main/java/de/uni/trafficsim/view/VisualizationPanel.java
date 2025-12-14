@@ -4,6 +4,7 @@ import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.model.RoadNetwork;
 import de.uni.trafficsim.model.SimulationFrame;
 import de.uni.trafficsim.model.TrafficLightWrapper;
+import de.uni.trafficsim.model.VehicleWrapper;
 import org.eclipse.sumo.libtraci.Simulation;
 import org.eclipse.sumo.libtraci.TraCIPosition;
 
@@ -181,10 +182,7 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         if (roadNetwork != null) {
             g2.setColor(Color.LIGHT_GRAY);
             for (Shape s : roadNetwork.getLaneShapes().values()) {
-                g2.fill(s); // Fill lane
-                g2.setColor(Color.WHITE);
-                g2.draw(s); // Outline lane
-                g2.setColor(Color.LIGHT_GRAY);
+                drawRoad(g2, s);
             }
         }
 
@@ -196,13 +194,16 @@ public class VisualizationPanel extends JPanel implements WindowListener {
             }
 
             // Draw Vehicles
-            for (Map.Entry<String, TraCIPosition> entry : currentFrame.vehiclePositions.entrySet()) {
-                String vid = entry.getKey();
-                TraCIPosition pos = entry.getValue();
-                Double angle = currentFrame.vehicleAngles.get(vid);
-
-                drawVehicle(g2, pos.getX(), pos.getY(), angle != null ? angle : 0);
+            for (VehicleWrapper veh : currentFrame.vehicleManager.getVehicles()) {
+                drawVehicle(g2, veh);
             }
+//            for (Map.Entry<String, TraCIPosition> entry : currentFrame.vehiclePositions.entrySet()) {
+//                String vid = entry.getKey();
+//                TraCIPosition pos = entry.getValue();
+//                Double angle = currentFrame.vehicleAngles.get(vid);
+//
+//                drawVehicle(g2, pos.getX(), pos.getY(), angle != null ? angle : 0);
+//            }
         }
 
         g2.setTransform(oldTx);
@@ -214,15 +215,22 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         g2.drawString(String.format("Zoom: %.2fx", scale), 10, 35);
     }
 
-    private void drawVehicle(Graphics2D g2, double x, double y, double angle) {
+    private void drawRoad(Graphics2D g2, Shape s) {
+        g2.fill(s); // Fill lane
+        g2.setColor(Color.WHITE);
+        g2.draw(s); // Outline lane
+        g2.setColor(Color.LIGHT_GRAY);
+    }
+
+    private void drawVehicle(Graphics2D g2, VehicleWrapper vehicle) {
         AffineTransform tx = g2.getTransform();
-        g2.translate(x, y);
+        g2.translate(vehicle.getPosition().getX(), vehicle.getPosition().getY());
         // Rotate vehicle (SUMO 0 is North/Up, Java 0 is East/Right)
         // We flip Y axis previously, so we must adjust rotation carefully.
         // Standard mapping: Java Rotation = Math.toRadians(90 - SumoAngle)
-        g2.rotate(Math.toRadians(90 - angle));
+        g2.rotate(Math.toRadians(90 - vehicle.getAngel()));
 
-        g2.setColor(Color.CYAN);
+        g2.setColor(vehicle.getColor());
         Path2D veh = new Path2D.Double();
         // Simple car shape (5m long, 2m wide approx)
         veh.moveTo(2.5, 0);
