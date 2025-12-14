@@ -18,7 +18,6 @@ public class SumoController implements Runnable {
     private final DashboardPanel dashboard; // Reference to Dashboard
     private final RoadNetwork roadNetwork;
     private final JLabel timeLabel; // Reference to UI label
-
     private SimulationFrame simulationFrame;
 
     private volatile boolean running = false;
@@ -44,6 +43,24 @@ public class SumoController implements Runnable {
         this.roadNetwork = new RoadNetwork();
     }
 
+    // Helpers for the Dialog
+    public List<String> getAvailableRoutes() {
+        return simulationFrame.availableRoutes;
+    }
+    public List<String> getAvailableTypes() {
+        return simulationFrame.availableTypes;
+    }
+
+    public SimulationFrame getSimulationFrame() {
+        return simulationFrame;
+    }
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
+    public boolean isPaused() {
+        return paused;
+    }
+
     public void start() {
         if (running) return;
         running = true;
@@ -62,26 +79,6 @@ public class SumoController implements Runnable {
         stressVehiclesLeft = 0;
     }
 
-    public void setPaused(boolean paused) {
-        this.paused = paused;
-    }
-
-    // Helpers for the Dialog
-    public List<String> getAvailableRoutes() {
-        return simulationFrame.availableRoutes;
-    }
-    public List<String> getAvailableTypes() {
-        return simulationFrame.availableTypes;
-    }
-
-    public SimulationFrame getSimulationFrame() {
-        return simulationFrame;
-    }
-
-    public boolean isPaused() {
-        return paused;
-    }
-
     public void stepOnce() {
         // Only allow manual stepping if we are paused
         if (paused) {
@@ -89,7 +86,7 @@ public class SumoController implements Runnable {
         }
     }
 
-    // Called by the View when user clicks a specific light
+    // Called by the View when the user clicks a specific light
     public void switchTrafficLight(TrafficLightWrapper tl) {
         scheduleTask(tl::changeState);
         System.out.println("Queued switch for TLS: " + tl.getId());
@@ -102,7 +99,7 @@ public class SumoController implements Runnable {
 
     //new function for stress Test
     public void runStressTest() {
-        //System.out.println("Stress test triggert");
+        //System.out.println("Stress test trigger");
         stressVehiclesLeft = 100;
         stressTestRequested = true;
     }
@@ -111,11 +108,11 @@ public class SumoController implements Runnable {
     private String getAnyRouteId() {
         try {
             StringVector routes = Route.getIDList();
-            if (routes != null && !routes.isEmpty()) {
+            if (!routes.isEmpty()) {
                 return routes.get(0);
             }
         } catch (Exception e) {
-
+            e.printStackTrace();
         }
         return null;
     }
@@ -169,22 +166,7 @@ public class SumoController implements Runnable {
 
                     // --- Handle Stress Test Request ---
                     if (stressTestRequested && stressVehiclesLeft > 0) {
-                        try {
-                            String routeId = getAnyRouteId();
-                            if (routeId != null) {
-                                String vehId = "stressVeh_" + stressVehicleCounter++;
-                                Vehicle.add(vehId, routeId, "DEFAULT_VEHTYPE", "now", "best", "0", "0");
-                                stressVehiclesLeft--;
-
-                                if (stressVehiclesLeft == 0) {
-                                    stressTestRequested = false;
-                                }
-                            } else {
-                                stressTestRequested = false;
-                            }
-                        } catch (Exception e) {
-                            stressTestRequested = false;
-                        }
+                        handleStressTest();
                     }
 
                     Simulation.step();
@@ -284,5 +266,24 @@ public class SumoController implements Runnable {
         SwingUtilities.invokeLater(() ->
                 dashboard.updateStats(mockTotalVehicles, mockAvgSpeed, mockStopped, mockCo2)
         );
+    }
+
+    private void handleStressTest() {
+        try {
+            String routeId = getAnyRouteId();
+            if (routeId != null) {
+                String vehId = "stressVeh_" + stressVehicleCounter++;
+                Vehicle.add(vehId, routeId, "DEFAULT_VEHTYPE", "now", "best", "0", "0");
+                stressVehiclesLeft--;
+
+                if (stressVehiclesLeft == 0) {
+                    stressTestRequested = false;
+                }
+            } else {
+                stressTestRequested = false;
+            }
+        } catch (Exception e) {
+            stressTestRequested = false;
+        }
     }
 }

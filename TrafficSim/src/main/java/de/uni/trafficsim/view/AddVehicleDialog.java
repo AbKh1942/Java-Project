@@ -3,7 +3,6 @@ package de.uni.trafficsim.view;
 import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.model.VehicleWrapper;
 import org.eclipse.sumo.libtraci.TraCIColor;
-import org.eclipse.sumo.libtraci.Vehicle;
 import org.eclipse.sumo.libtraci.VehicleType;
 
 import javax.swing.*;
@@ -12,13 +11,13 @@ import java.util.List;
 
 public class AddVehicleDialog extends JDialog {
     private final SumoController controller;
-    private final JComboBox<String> routeCombo;
-    private final JComboBox<String> typeCombo;
-    private final JPanel newTypePanel;
-    private final JTextField newTypeIdField;
-    private final JSpinner lengthSpinner;
-    private final JSpinner speedSpinner;
-    private final JButton colorButton;
+    private JComboBox<String> routeCombo;
+    private JComboBox<String> typeCombo;
+    private JPanel newTypePanel;
+    private JTextField newTypeIdField;
+    private JSpinner lengthSpinner;
+    private JSpinner speedSpinner;
+    private JButton colorButton;
     private Color selectedColor = Color.CYAN;
 
     public AddVehicleDialog(Frame owner, SumoController controller) {
@@ -34,14 +33,34 @@ public class AddVehicleDialog extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // --- 1. Route Selector ---
+        setupRouteSelector(form, gbc);
+
+        // --- 2. Type Selector ---
+        setupTypeSelector(form, gbc);
+
+        // --- 3. Color Picker ---
+        setupColorPicker(form, gbc);
+
+        // --- 4. New Type Fields (Hidden by default) ---
+        setupNewTypeFields(form, gbc);
+
+        // Set up listeners
+        setupListeners();
+
+        // --- Footer Buttons ---
+        setUpFooter();
+    }
+
+    private void setupRouteSelector(JPanel form, GridBagConstraints gbc) {
         gbc.gridx = 0; gbc.gridy = 0;
         form.add(new JLabel("Select Route:"), gbc);
 
         gbc.gridx = 1;
         routeCombo = new JComboBox<>(controller.getAvailableRoutes().toArray(new String[0]));
         form.add(routeCombo, gbc);
+    }
 
-        // --- 2. Type Selector ---
+    private void setupTypeSelector(JPanel form, GridBagConstraints gbc) {
         gbc.gridx = 0; gbc.gridy = 1;
         form.add(new JLabel("Vehicle Type:"), gbc);
 
@@ -53,8 +72,9 @@ public class AddVehicleDialog extends JDialog {
         }
         typeCombo.addItem("--- Create New Type ---");
         form.add(typeCombo, gbc);
+    }
 
-        // --- 3. Color Picker ---
+    private void setupColorPicker(JPanel form, GridBagConstraints gbc) {
         gbc.gridx = 0; gbc.gridy = 2;
         form.add(new JLabel("Vehicle Color:"), gbc);
 
@@ -63,16 +83,11 @@ public class AddVehicleDialog extends JDialog {
         colorButton.setBackground(selectedColor);
         colorButton.setOpaque(true);
         colorButton.setBorderPainted(false);
-        colorButton.addActionListener(e -> {
-            Color c = JColorChooser.showDialog(this, "Pick Color", selectedColor);
-            if (c != null) {
-                selectedColor = c;
-                colorButton.setBackground(c);
-            }
-        });
-        form.add(colorButton, gbc);
 
-        // --- 4. New Type Fields (Hidden by default) ---
+        form.add(colorButton, gbc);
+    }
+
+    private void setupNewTypeFields(JPanel form, GridBagConstraints gbc) {
         newTypePanel = new JPanel(new GridLayout(3, 2, 5, 5));
         newTypePanel.setBorder(BorderFactory.createTitledBorder("New Type Attributes"));
 
@@ -94,6 +109,16 @@ public class AddVehicleDialog extends JDialog {
         form.add(newTypePanel, gbc);
 
         add(form, BorderLayout.CENTER);
+    }
+
+    private void setupListeners() {
+        colorButton.addActionListener(e -> {
+            Color c = JColorChooser.showDialog(this, "Pick Color", selectedColor);
+            if (c != null) {
+                selectedColor = c;
+                colorButton.setBackground(c);
+            }
+        });
 
         // --- Logic to Toggle New Type Panel ---
         typeCombo.addActionListener(e -> {
@@ -102,8 +127,9 @@ public class AddVehicleDialog extends JDialog {
             revalidate();
             repaint();
         });
+    }
 
-        // --- Footer Buttons ---
+    private void setUpFooter() {
         JPanel footer = new JPanel();
         JButton addBtn = new JButton("Add Vehicle");
         JButton cancelBtn = new JButton("Cancel");

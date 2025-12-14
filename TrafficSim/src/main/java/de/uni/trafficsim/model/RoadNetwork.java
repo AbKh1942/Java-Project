@@ -18,7 +18,6 @@ public class RoadNetwork {
     public Map<String, Shape> getLaneShapes() {
         return laneShapes;
     }
-
     public Map<String, List<TraCIPosition>> getTlsStopLines() {
         return tlsStopLines;
     }

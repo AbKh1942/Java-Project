@@ -23,18 +23,17 @@ The manager itself does not talk to TraCI. That work is handled by the
 Vehicle instances.
 */
 
-//class for handling all vehicle entities in our simulation, used by SimulationController
+//class for handling all vehicle entities in our simulation, used by SimulationFrame
 public class VehicleManager {
-    //Map: Key = id (String), value = Vehicle-Object. Final: Map-reference cannot be changed, but the map-contents can be changed (add/remove)
+    // List with all Vehicles in simulation
     private final List<VehicleWrapper> vehicles = new ArrayList<>();
 
     //injecting new vehicle
     public void addVehicleToSimulation(VehicleWrapper vehicle, String typeId) {
-        //makes sure input cant be NULL
+        //makes sure input can`t be NULL
         if (vehicle == null) {
             throw new IllegalArgumentException("vehicle must not be null");
         }
-        //calls vehicles.put() method from JAva-Map to add a new entry(id, vehicle) to the Hashmap
         Vehicle.add(vehicle.getId(), vehicle.getRoute(), typeId, "now", "first", "0", "0");
         Vehicle.setColor(vehicle.getId(), vehicle.getTraCIColor());
         System.out.println("Injected vehicle " + vehicle.getId() + " on route " + vehicle.getRoute());
@@ -45,18 +44,21 @@ public class VehicleManager {
     }
 
     public List<VehicleWrapper> getVehicles() {
-        return vehicles;                           //unmodifiableMaps -> can only be read, not changed
-    }                                                                           //Collections allows to store multiple Objects (Java Standard Library)
+        return vehicles;
+    }
 
-    public boolean removeVehicle(VehicleWrapper vehicle) {                            //remove Vehicle
-        return vehicles.remove(vehicle);                                      //calls Java-Map method vehicles.remove() to remove entry from the hashmap, returns removed vehicle
+    //remove Vehicle
+    public boolean removeVehicle(VehicleWrapper vehicle) {
+        //calls Java-Map method vehicles.remove() to remove entry from the list
+        return vehicles.remove(vehicle);
     }
 
     /*
     Placeholder for logic for getting vehicles by filter
     Will be implemented later.
      */
-    public Map<String, VehicleWrapper> getVehicleByFilter() {                          //not imlplemented yet
+    //not implemented yet
+    public Map<String, VehicleWrapper> getVehicleByFilter() {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 }

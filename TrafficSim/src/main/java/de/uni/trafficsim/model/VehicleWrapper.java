@@ -12,15 +12,17 @@ Every get or set call pulls the latest values directly
 from the SUMO Simulation via the TraCI Interface, so all the data is up to date
  */
 
-
-public class VehicleWrapper {                              //defining new class Vehicle, describes a single Vehicle in SUMO-Simulation
-    private final String id;                        //only Vehicle class can access id, cannot be changed (final). Every vehicle instance has unique id
+//defining new class Vehicle, describes a single Vehicle in SUMO-Simulation
+public class VehicleWrapper {
+    //only Vehicle class can access id, cannot be changed (final). Every vehicle instance has unique id
+    private final String id;
     private TraCIPosition position;
-    private double angel;//Position is a double Array for 2 numbers (x,y coordinate). position[0] = x, position[1] = y
+    private double angel;
     private double speed;
     private double length;
-    private final String route;//route id in SUMO is a string. the route id identifies a list of edges (roads)
-    private final Color color;                           //Color as Hex-number string in RGB format
+    //route id in SUMO is a string. the route id identifies a list of edges (roads)
+    private final String route;
+    private final Color color;
 
     //Konstruktor, is called when new vehicle is created
     public VehicleWrapper(
@@ -83,7 +85,7 @@ public class VehicleWrapper {                              //defining new class 
         return sumoColor;
     }
 
-    //formatColor method to interpret TraCIColor-Object as Hex-RGB-format-String
+    // format color from TraCIColor to Color (java.awt)
     private static Color formatColor(TraCIColor color) {
         return new Color(color.getR(), color.getG(), color.getB());
     }

@@ -79,6 +79,7 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         setupKeyBindings();
     }
 
+    // Setters
     public void setController(SumoController c) {
         this.controller = c;
     }
@@ -197,13 +198,6 @@ public class VisualizationPanel extends JPanel implements WindowListener {
             for (VehicleWrapper veh : currentFrame.vehicleManager.getVehicles()) {
                 drawVehicle(g2, veh);
             }
-//            for (Map.Entry<String, TraCIPosition> entry : currentFrame.vehiclePositions.entrySet()) {
-//                String vid = entry.getKey();
-//                TraCIPosition pos = entry.getValue();
-//                Double angle = currentFrame.vehicleAngles.get(vid);
-//
-//                drawVehicle(g2, pos.getX(), pos.getY(), angle != null ? angle : 0);
-//            }
         }
 
         g2.setTransform(oldTx);
@@ -231,13 +225,20 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         g2.rotate(Math.toRadians(90 - vehicle.getAngel()));
 
         g2.setColor(vehicle.getColor());
+
+        double halfLen = vehicle.getLength() / 2.0;
         Path2D veh = new Path2D.Double();
-        // Simple car shape (5m long, 2m wide approx)
-        veh.moveTo(2.5, 0);
-        veh.lineTo(-2.5, 1.25);
-        veh.lineTo(-2.5, -1.25);
+        veh.moveTo(halfLen, 0); // Front center
+        veh.lineTo(-halfLen, 1.0); // Back Left
+        veh.lineTo(-halfLen, -1.0); // Back Right
         veh.closePath();
+
         g2.fill(veh);
+
+        // Outline
+        g2.setColor(Color.BLACK);
+        g2.setStroke(new BasicStroke((float)(0.2))); // Constant thin stroke relative to object
+        g2.draw(veh);
 
         g2.setTransform(tx);
     }
