@@ -169,7 +169,7 @@ public class MainFrame {
         toolbar.add(zoomOutBtn);
         toolbar.add(zoomInBtn);
 
-        toolbar.addSeparator();
+        toolbar.add(Box.createHorizontalGlue());
         toolbar.add(helpBtn); // help button added to toolbar in SUMO
     }
 
