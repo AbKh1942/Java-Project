@@ -1,6 +1,10 @@
 package de.uni.trafficsim.view;
 
+import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.model.RoadNetwork;
+import de.uni.trafficsim.model.SimulationFrame;
+import de.uni.trafficsim.model.TrafficLightWrapper;
+import de.uni.trafficsim.model.VehicleWrapper;
 import org.eclipse.sumo.libtraci.Simulation;
 import org.eclipse.sumo.libtraci.TraCIPosition;
 
@@ -14,12 +18,14 @@ import java.util.Map;
 public class VisualizationPanel extends JPanel implements WindowListener {
     private RoadNetwork roadNetwork;
     private SimulationFrame currentFrame;
+    private SumoController controller; // Reference to controller for callbacks
 
     // Viewport transforms
     private double scale = 2.0; // Zoom level
     private double offsetX = 50;
     private double offsetY = 600; // Offset to handle coordinate flip
 
+    // Constructor
     public VisualizationPanel() {
         setBackground(Color.DARK_GRAY);
         // Add MouseListeners here for Pan/Zoom if desired
@@ -55,6 +61,14 @@ public class VisualizationPanel extends JPanel implements WindowListener {
                 double zoomFactor = (e.getWheelRotation() < 0) ? 1.1 : (1.0 / 1.1);
                 applyZoom(zoomFactor, e.getX(), e.getY());
             }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // Handle Traffic Light Clicking
+                if (currentFrame != null && controller != null) {
+                    checkTlsClick(e.getX(), e.getY());
+                }
+            }
         };
 
         addMouseListener(ma);
@@ -65,6 +79,44 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         setupKeyBindings();
     }
 
+    // Setters
+    public void setController(SumoController c) {
+        this.controller = c;
+    }
+
+    public void setRoadNetwork(RoadNetwork net) {
+        this.roadNetwork = net;
+        repaint();
+    }
+
+    public void updateFrame(SimulationFrame frame) {
+        this.currentFrame = frame;
+        repaint();
+    }
+
+    // Check whether click on the map was on a traffic light or not
+    private void checkTlsClick(int screenX, int screenY) {
+        // Convert Screen to World
+        double worldX = (screenX - offsetX) / scale;
+        double worldY = (offsetY - screenY) / scale;
+
+        double clickRadius = 5.0; // Meters
+
+        if (currentFrame.trafficLights != null) {
+            for (TrafficLightWrapper light : currentFrame.trafficLights) {
+                TraCIPosition pos = light.getPosition();
+                double dist = Math.sqrt(Math.pow(pos.getX() - worldX, 2) + Math.pow(pos.getY() - worldY, 2));
+
+                if (dist <= clickRadius) {
+                    System.out.println("Clicked TLS: " + light.getId());
+                    controller.switchTrafficLight(light);
+                    return;
+                }
+            }
+        }
+    }
+
+    // Method for setting up keyboard shortcuts
     private void setupKeyBindings() {
         InputMap im = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getActionMap();
@@ -111,16 +163,6 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         repaint();
     }
 
-    public void setRoadNetwork(RoadNetwork net) {
-        this.roadNetwork = net;
-        repaint();
-    }
-
-    public void updateFrame(SimulationFrame frame) {
-        this.currentFrame = frame;
-        repaint();
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -140,32 +182,21 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         // --- 2. Draw Roads (Static) ---
         if (roadNetwork != null) {
             g2.setColor(Color.LIGHT_GRAY);
-            for (Shape s : roadNetwork.laneShapes.values()) {
-                g2.fill(s); // Fill lane
-                g2.setColor(Color.WHITE);
-                g2.draw(s); // Outline lane
-                g2.setColor(Color.LIGHT_GRAY);
+            for (Shape s : roadNetwork.getLaneShapes().values()) {
+                drawRoad(g2, s);
             }
         }
 
         // --- 3. Draw Dynamic Entities ---
         if (currentFrame != null) {
             // Draw Traffic Lights
-            for (Map.Entry<String, TraCIPosition> entry : currentFrame.tlsPositions.entrySet()) {
-                String id = entry.getKey();
-                TraCIPosition pos = entry.getValue();
-                String state = currentFrame.tlsStates.get(id);
-
-                drawTrafficLight(g2, pos.getX(), pos.getY(), state);
+            for (TrafficLightWrapper tl: currentFrame.trafficLights) {
+                drawTrafficLight(g2, tl);
             }
 
             // Draw Vehicles
-            for (Map.Entry<String, TraCIPosition> entry : currentFrame.vehiclePositions.entrySet()) {
-                String vid = entry.getKey();
-                TraCIPosition pos = entry.getValue();
-                Double angle = currentFrame.vehicleAngles.get(vid);
-
-                drawVehicle(g2, pos.getX(), pos.getY(), angle != null ? angle : 0);
+            for (VehicleWrapper veh : currentFrame.vehicleManager.getVehicles()) {
+                drawVehicle(g2, veh);
             }
         }
 
@@ -178,37 +209,56 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         g2.drawString(String.format("Zoom: %.2fx", scale), 10, 35);
     }
 
-    private void drawVehicle(Graphics2D g2, double x, double y, double angle) {
+    private void drawRoad(Graphics2D g2, Shape s) {
+        g2.fill(s); // Fill lane
+        g2.setColor(Color.WHITE);
+        g2.draw(s); // Outline lane
+        g2.setColor(Color.LIGHT_GRAY);
+    }
+
+    private void drawVehicle(Graphics2D g2, VehicleWrapper vehicle) {
         AffineTransform tx = g2.getTransform();
-        g2.translate(x, y);
+        g2.translate(vehicle.getPosition().getX(), vehicle.getPosition().getY());
         // Rotate vehicle (SUMO 0 is North/Up, Java 0 is East/Right)
         // We flip Y axis previously, so we must adjust rotation carefully.
         // Standard mapping: Java Rotation = Math.toRadians(90 - SumoAngle)
-        g2.rotate(Math.toRadians(90 - angle));
+        g2.rotate(Math.toRadians(90 - vehicle.getAngel()));
 
-        g2.setColor(Color.CYAN);
+        g2.setColor(vehicle.getColor());
+
+        double halfLen = vehicle.getLength() / 2.0;
         Path2D veh = new Path2D.Double();
-        // Simple car shape (5m long, 2m wide approx)
-        veh.moveTo(2.5, 0);
-        veh.lineTo(-2.5, 1.25);
-        veh.lineTo(-2.5, -1.25);
+        veh.moveTo(halfLen, 0); // Front center
+        veh.lineTo(-halfLen, 1.0); // Back Left
+        veh.lineTo(-halfLen, -1.0); // Back Right
         veh.closePath();
+
         g2.fill(veh);
+
+        // Outline
+        g2.setColor(Color.BLACK);
+        g2.setStroke(new BasicStroke((float)(0.2))); // Constant thin stroke relative to object
+        g2.draw(veh);
 
         g2.setTransform(tx);
     }
 
-    private void drawTrafficLight(Graphics2D g2, double x, double y, String state) {
+    private void drawTrafficLight(Graphics2D g2, TrafficLightWrapper tl) {
         // Simple visualization: A circle at the junction center
-        // Color depends on the first character of the state string (G, g, r, y, etc.)
-        char firstSignal = !state.isEmpty() ? state.charAt(0) : 'r';
-
-        if (firstSignal == 'G' || firstSignal == 'g') g2.setColor(Color.GREEN);
-        else if (firstSignal == 'y' || firstSignal == 'Y') g2.setColor(Color.YELLOW);
-        else g2.setColor(Color.RED);
-
-        // Draw circle (radius 2m)
-        g2.fillOval((int)(x - 2), (int)(y - 2), 4, 4);
+        g2.setColor(tl.getColor());
+        g2.fillOval(
+                (int)(tl.getPosition().getX() - 3),
+                (int)(tl.getPosition().getY() - 3),
+                6,
+                6
+        );
+        g2.setColor(Color.BLACK);
+        g2.drawOval(
+                (int)(tl.getPosition().getX() - 3),
+                (int)(tl.getPosition().getY() - 3),
+                6,
+                6
+        );
     }
 
     @Override

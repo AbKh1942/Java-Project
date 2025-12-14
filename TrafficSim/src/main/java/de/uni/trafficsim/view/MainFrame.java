@@ -9,13 +9,15 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.awt.Desktop;
-
-
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainFrame {
 
+    // implement Singleton Pattern
     private static MainFrame instance;
 
+    // UI Elements
     private final JFrame frame;
     private final DashboardPanel dashboard;
     private final VisualizationPanel panel;
@@ -27,13 +29,12 @@ public class MainFrame {
     private final JButton stepBtn; // Added Step Button
     private final JButton stopBtn;
     private final JButton addVehicleBtn;
-    private final JButton switchTlsBtn;
     private final JButton zoomInBtn;
     private final JButton zoomOutBtn;
     private final JButton stressTestBtn; // stress Test button
     private final JButton helpBtn; // help button
 
-
+    // Method for getting instance of MainFrame class
     public static MainFrame getInstance(String sumoConfig) {
         if (instance == null) {
             instance = new MainFrame(sumoConfig);
@@ -41,19 +42,20 @@ public class MainFrame {
         return instance;
     }
 
+    // Constructor
     private MainFrame(String sumoConfig) {
         frame = new JFrame("SUMO Custom Controller");
         panel = new VisualizationPanel();
         dashboard = new DashboardPanel();
         timeLabel = new JLabel("Time: 0.0 s");
         controller = new SumoController(sumoConfig, panel, dashboard, timeLabel);
+        panel.setController(controller);
         toolbar = new JToolBar();
         startBtn = new JButton("Start SUMO");
         pauseBtn = new JButton("Pause");
         stepBtn = new JButton("Step");
         stopBtn = new JButton("Stop");
         addVehicleBtn = new JButton("Add Car");
-        switchTlsBtn = new JButton("Switch Lights");
         zoomInBtn = new JButton(" + ");
         zoomOutBtn = new JButton(" - ");
         stressTestBtn = new JButton("Stress Test"); //stress test button
@@ -85,7 +87,6 @@ public class MainFrame {
         stopBtn.setEnabled(false);
         stepBtn.setEnabled(false);
         addVehicleBtn.setEnabled(false);
-        switchTlsBtn.setEnabled(false);
         stressTestBtn.setEnabled(false); //new
 
         startBtn.addActionListener(e -> {
@@ -95,7 +96,6 @@ public class MainFrame {
             stepBtn.setEnabled(false);
             stopBtn.setEnabled(true);
             addVehicleBtn.setEnabled(true);
-            switchTlsBtn.setEnabled(true);
             stressTestBtn.setEnabled(true); //new
             pauseBtn.setText("Pause"); // Reset text
         });
@@ -116,7 +116,6 @@ public class MainFrame {
             stepBtn.setEnabled(false);
             stopBtn.setEnabled(false);
             addVehicleBtn.setEnabled(false);
-            switchTlsBtn.setEnabled(false);
             stressTestBtn.setEnabled(false);
             pauseBtn.setText("Pause");
             timeLabel.setText("Time: 0.0 s"); // Reset time
@@ -127,11 +126,8 @@ public class MainFrame {
         });
 
         addVehicleBtn.addActionListener(e -> {
-            System.out.println("Inject vehicle requested.");
-        });
-
-        switchTlsBtn.addActionListener(e -> {
-            controller.switchTrafficLights();
+            AddVehicleDialog dialog = new AddVehicleDialog(frame, controller);
+            dialog.setVisible(true);
         });
 
         stressTestBtn.addActionListener(e -> {
@@ -140,30 +136,7 @@ public class MainFrame {
         });
 
         helpBtn.addActionListener(e -> {
-            try {
-                // load file from resources
-                InputStream is = getClass().getClassLoader().getResourceAsStream("help.pdf"); // or help.txt
-
-                if (is == null) {
-                    JOptionPane.showMessageDialog(frame,
-                            "Help file not found in resources.",
-                            "Help", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                // copy to temp file so Desktop can open it
-                File tempFile = File.createTempFile("help_", ".pdf"); // ".txt" if needed
-                tempFile.deleteOnExit();
-
-                Files.copy(is, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-                Desktop.getDesktop().open(tempFile);
-
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(frame,
-                        "Could not open help file:\n" + ex.getMessage(),
-                        "Help", JOptionPane.ERROR_MESSAGE);
-            }
+            openGuide();
         });
     }
 
@@ -186,7 +159,6 @@ public class MainFrame {
         toolbar.add(stepBtn);
         toolbar.add(stopBtn);
         toolbar.add(addVehicleBtn);
-        toolbar.add(switchTlsBtn);
         toolbar.add(stressTestBtn); //stress Test button added to toolbar in SUMO
 
         toolbar.addSeparator(); // Separator for Time
@@ -199,5 +171,32 @@ public class MainFrame {
 
         toolbar.addSeparator();
         toolbar.add(helpBtn); // help button added to toolbar in SUMO
+    }
+
+    private void openGuide() {
+        try {
+            // load file from resources
+            InputStream is = getClass().getClassLoader().getResourceAsStream("help.pdf"); // or help.txt
+
+            if (is == null) {
+                JOptionPane.showMessageDialog(frame,
+                        "Help file not found in resources.",
+                        "Help", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // copy to temp file so Desktop can open it
+            File tempFile = File.createTempFile("help_", ".pdf"); // ".txt" if needed
+            tempFile.deleteOnExit();
+
+            Files.copy(is, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            Desktop.getDesktop().open(tempFile);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    "Could not open help file:\n" + ex.getMessage(),
+                    "Help", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

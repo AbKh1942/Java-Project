@@ -7,11 +7,13 @@ import java.awt.*;
  A sidebar panel to display simulation statistics.
  **/
  public class DashboardPanel extends JPanel {
-    private JLabel totalVehiclesLabel;
-    private JLabel avgSpeedLabel;
-    private JLabel stoppedVehiclesLabel;
-    private JLabel co2Label;
+    // UI Elements
+    private final JLabel totalVehiclesLabel;
+    private final JLabel avgSpeedLabel;
+    private final JLabel stoppedVehiclesLabel;
+    private final JLabel co2Label;
 
+    // Constructor
     public DashboardPanel() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setPreferredSize(new Dimension(220, 0));
@@ -19,7 +21,7 @@ import java.awt.*;
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         // Header
-        add(createHeader("Statistics"));
+        add(createHeader());
         add(Box.createVerticalStrut(20)); // Spacer
 
         // Stats
@@ -39,14 +41,16 @@ import java.awt.*;
         add(Box.createVerticalGlue()); // Push content to top
     }
 
-    private JLabel createHeader(String text) {
-        JLabel lbl = new JLabel(text);
+    // method for creating a header
+    private JLabel createHeader() {
+        JLabel lbl = new JLabel("Statistics");
         lbl.setForeground(new Color(79, 195, 247)); // Light Blue
         lbl.setFont(new Font("SansSerif", Font.BOLD, 18));
         lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         return lbl;
     }
 
+    // method for creating a stat label
     private JLabel createStatLabel(String text) {
         JLabel lbl = new JLabel(text);
         lbl.setForeground(Color.WHITE);
@@ -55,6 +59,7 @@ import java.awt.*;
         return lbl;
     }
 
+    // method for updating stats
     public void updateStats(int count, double speed, int stopped, double co2) {
         totalVehiclesLabel.setText("Vehicles: " + count);
         avgSpeedLabel.setText(String.format("Avg Speed: %.1f m/s", speed));
