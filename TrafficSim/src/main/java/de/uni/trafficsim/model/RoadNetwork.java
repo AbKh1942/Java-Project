@@ -11,11 +11,43 @@ import java.util.Map;
 
 public class RoadNetwork {
     // Map of Lane ID -> Java Shape object
-    public Map<String, Shape> laneShapes = new HashMap<>();
+    private final Map<String, Shape> laneShapes = new HashMap<>();
     // Map: TLS_ID -> List of Stop Line Positions (one per controlled lane index)
-    public Map<String, List<TraCIPosition>> tlsStopLines = new HashMap<>();
+    private final Map<String, List<TraCIPosition>> tlsStopLines = new HashMap<>();
+
+    // Cache for UI dropdowns
+    private final List<String> availableRoutes = new ArrayList<>();
+    private final List<String> availableTypes = new ArrayList<>();
+
+    public Map<String, Shape> getLaneShapes() {
+        return laneShapes;
+    }
+
+    public Map<String, List<TraCIPosition>> getTlsStopLines() {
+        return tlsStopLines;
+    }
+
+    public List<String> getAvailableRoutes() {
+        return availableRoutes;
+    }
+
+    public List<String> getAvailableTypes() {
+        return availableTypes;
+    }
 
     public void loadFromSumo() {
+        // 1. Load Lane Geometries
+        loadLanes();
+
+        // 2. Load Traffic Light Geometries
+        loadTrafficLights();
+
+        // 3. Cache available routes and vehicle types for dropdowns
+        availableRoutes.addAll(Route.getIDList());
+        availableTypes.addAll(VehicleType.getIDList());
+    }
+
+    private void loadLanes() {
         System.out.println("Loading static road network from SUMO...");
 
         // 1. Get all Lane IDs from SUMO
@@ -43,10 +75,8 @@ public class RoadNetwork {
             laneShapes.put(id, new BasicStroke((float) width).createStrokedShape(path));
         }
         System.out.println("Loaded " + laneShapes.size() + " lanes.");
-
-        // 2. Load Traffic Light Geometries
-        loadTrafficLights();
     }
+
 
     private void loadTrafficLights() {
         System.out.println("Loading traffic light positions...");

@@ -3,7 +3,7 @@ package de.uni.trafficsim.controller;
 import de.uni.trafficsim.model.RoadNetwork;
 import de.uni.trafficsim.model.TrafficLightWrapper;
 import de.uni.trafficsim.view.DashboardPanel;
-import de.uni.trafficsim.view.SimulationFrame;
+import de.uni.trafficsim.model.SimulationFrame;
 import de.uni.trafficsim.view.VisualizationPanel;
 import org.eclipse.sumo.libtraci.*;
 
@@ -30,8 +30,8 @@ public class SumoController implements Runnable {
     // Random generator for mock data
     private final Random random = new Random();
 
-    // Queue for specific TLS switches
-    private final Set<TrafficLightWrapper> tlsSwitchRequests = new HashSet<>();
+    // Generic Task Queue for interacting with SUMO from EDT
+    private final Queue<Runnable> taskQueue = new LinkedList<>();
 
     public SumoController(String configPath, VisualizationPanel view, DashboardPanel dashboard, JLabel timeLabel) {
         this.sumoConfigPath = configPath;
@@ -63,6 +63,14 @@ public class SumoController implements Runnable {
         this.paused = paused;
     }
 
+    // Helpers for the Dialog
+    public List<String> getAvailableRoutes() {
+        return roadNetwork.getAvailableRoutes();
+    }
+    public List<String> getAvailableTypes() {
+        return roadNetwork.getAvailableTypes();
+    }
+
     public boolean isPaused() {
         return paused;
     }
@@ -75,9 +83,14 @@ public class SumoController implements Runnable {
     }
 
     // Called by the View when user clicks a specific light
-    public synchronized void switchTrafficLight(TrafficLightWrapper tl) {
-        tlsSwitchRequests.add(tl);
+    public void switchTrafficLight(TrafficLightWrapper tl) {
+        scheduleTask(tl::changeState);
         System.out.println("Queued switch for TLS: " + tl.getId());
+    }
+
+    // Thread-safe method to schedule SUMO commands
+    public synchronized void scheduleTask(Runnable task) {
+        taskQueue.add(task);
     }
 
     //new function for stress Test
@@ -104,9 +117,7 @@ public class SumoController implements Runnable {
     public void run() {
         Process sumoProcess = null;
         try {
-            // ---------------------------------------------------------
             // 1. Start SUMO Process (Headless Mode)
-            // ---------------------------------------------------------
             System.out.println("Launching SUMO...");
             String[] cmd = {
                     "sumo",
@@ -118,38 +129,34 @@ public class SumoController implements Runnable {
             // Give SUMO a moment to start up and open the port
             Thread.sleep(2000);
 
-            // ---------------------------------------------------------
             // 2. Connect via TraCI
-            // ---------------------------------------------------------
             System.out.println("Connecting to TraCI");
+
             /// If you're using Windows/Linux, you should use line 69, in other cases - use line 68 with your path.
             System.load("/Users/alexandrbahno/sumo/bin/liblibtracijni.jnilib");
 //            Simulation.preloadLibraries();
 
             Simulation.start(new StringVector(cmd));
 
-            // ---------------------------------------------------------
             // 3. Initialization (Static Data)
-            // ---------------------------------------------------------
             // We fetch the road network ONCE because it doesn't change.
             roadNetwork.loadFromSumo();
             view.setRoadNetwork(roadNetwork);
 
-            // ---------------------------------------------------------
             // 4. Simulation Loop (Dynamic Data)
-            // ---------------------------------------------------------
             while (running) {
                 // Execute step if:
                 // 1. Not paused (running normally)
                 // 2. OR Paused but a manual step was requested
                 if (!paused || stepRequested) {
-                    // --- Process Individual TLS Requests ---
-                    if (!tlsSwitchRequests.isEmpty()) {
-                        synchronized(this) {
-                            for (TrafficLightWrapper tl : tlsSwitchRequests) {
-                                tl.changeState();
+                    // --- Process Task Queue (Injections, Switches, etc.) ---
+                    synchronized(this) {
+                        while (!taskQueue.isEmpty()) {
+                            try {
+                                taskQueue.poll().run();
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                            tlsSwitchRequests.clear();
                         }
                     }
 
@@ -175,55 +182,28 @@ public class SumoController implements Runnable {
 
                     Simulation.step();
                     // 1. Fetch Time
-                    double currentTime = Simulation.getTime();
+                    fetchSimulationTime();
 
-                    // 2. Update UI Label (Must be done on EDT)
-                    SwingUtilities.invokeLater(() ->
-                            timeLabel.setText(String.format("Time: %.1f s", currentTime))
-                    );
-
-                    // 3. Fetch Data
+                    // 2. Fetch Data
                     SimulationFrame frame = new SimulationFrame();
 
                     StringVector vehIds = Vehicle.getIDList();
-                    for (String vid : vehIds) {
-                        frame.vehiclePositions.put(vid, Vehicle.getPosition(vid));
-                        frame.vehicleAngles.put(vid, Vehicle.getAngle(vid));
-                    }
+                    fetchVehicles(frame, vehIds);
 
                     StringVector tlsIds = TrafficLight.getIDList();
-                    for (String tid : tlsIds) {
-                        String state = TrafficLight.getRedYellowGreenState(tid);
-                        List<TraCIPosition> positions = roadNetwork.tlsStopLines.get(tid);
-                        // Zip the state string with the positions
-                        if (positions != null) {
-                            int count = Math.min(state.length(), positions.size());
-                            for (int k = 0; k < count; k++) {
-                                frame.trafficLights.add(
-                                        new TrafficLightWrapper(tid, positions.get(k), state.charAt(k))
-                                );
-                            }
-                        }
-                    }
+                    fetchTrafficLights(frame, tlsIds);
 
                     // 3. Update Dashboard (MOCK DATA)
-                    // We generate plausible numbers to demonstrate the UI
-                    int mockTotalVehicles = vehIds.size() + random.nextInt(5); // Mix real count with noise
-                    double mockAvgSpeed = 10.0 + random.nextDouble() * 15.0; // Random speed 10-25 m/s
-                    int mockStopped = random.nextInt(mockTotalVehicles / 2 + 1);
-                    double mockCo2 = mockTotalVehicles * (2.5 + random.nextDouble());
+                    updateStatDashboard(vehIds);
 
-                    SwingUtilities.invokeLater(() ->
-                            dashboard.updateStats(mockTotalVehicles, mockAvgSpeed, mockStopped, mockCo2)
-                    );
-
+                    // 4. Update our map
                     view.updateFrame(frame);
 
                     // Reset single step flag immediately after processing
                     stepRequested = false;
                 }
 
-                // D. Rate Limiting (approx 30 FPS drawing)
+                // Rate Limiting (approx 30 FPS drawing)
                 Thread.sleep(33);
             }
 
@@ -239,5 +219,49 @@ public class SumoController implements Runnable {
             }
             System.out.println("Simulation stopped.");
         }
+    }
+
+    private void fetchSimulationTime() {
+        double currentTime = Simulation.getTime();
+
+        // Update UI Label (Must be done on EDT)
+        SwingUtilities.invokeLater(() ->
+                timeLabel.setText(String.format("Time: %.1f s", currentTime))
+        );
+    }
+
+    private void fetchVehicles(SimulationFrame frame, StringVector vehIds) {
+        for (String vid : vehIds) {
+            frame.vehiclePositions.put(vid, Vehicle.getPosition(vid));
+            frame.vehicleAngles.put(vid, Vehicle.getAngle(vid));
+        }
+    }
+
+    private void fetchTrafficLights(SimulationFrame frame, StringVector tlsIds) {
+        for (String tid : tlsIds) {
+            String state = TrafficLight.getRedYellowGreenState(tid);
+            List<TraCIPosition> positions = roadNetwork.getTlsStopLines().get(tid);
+            // Zip the state string with the positions
+            if (positions != null) {
+                int count = Math.min(state.length(), positions.size());
+                for (int k = 0; k < count; k++) {
+                    frame.trafficLights.add(
+                            new TrafficLightWrapper(tid, positions.get(k), state.charAt(k))
+                    );
+                }
+            }
+        }
+    }
+
+    private void updateStatDashboard(StringVector vehIds) {
+        // We generate plausible numbers to demonstrate the UI
+        int mockTotalVehicles = vehIds.size() + random.nextInt(5); // Mix real count with noise
+        double mockAvgSpeed = 10.0 + random.nextDouble() * 15.0; // Random speed 10-25 m/s
+        int mockStopped = random.nextInt(mockTotalVehicles / 2 + 1);
+        double mockCo2 = mockTotalVehicles * (2.5 + random.nextDouble());
+
+        SwingUtilities.invokeLater(() ->
+                dashboard.updateStats(mockTotalVehicles, mockAvgSpeed, mockStopped, mockCo2)
+        );
     }
 }

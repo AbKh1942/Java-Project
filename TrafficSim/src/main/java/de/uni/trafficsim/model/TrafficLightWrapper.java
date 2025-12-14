@@ -8,7 +8,7 @@ import java.awt.*;
 public class TrafficLightWrapper {
     // Properties
     private final String id;
-    private TraCIPosition position;
+    private final TraCIPosition position;
     private final TLState state;
 
     // Constructor
@@ -20,13 +20,9 @@ public class TrafficLightWrapper {
         else this.state = TLState.RED;
     }
 
-    // Getters and Setters
+    // Getters
     public String getId() {
         return id;
-    }
-
-    public void setPosition(TraCIPosition position) {
-        this.position = position;
     }
 
     public TraCIPosition getPosition() {
@@ -37,6 +33,7 @@ public class TrafficLightWrapper {
         return state.getColor();
     }
 
+    // function for changing state of traffic light
     public void changeState() {
         try {
             // Forces immediate transition to next phase
@@ -55,6 +52,7 @@ public class TrafficLightWrapper {
                 position.equals(((TrafficLightWrapper)obj).position);
     }
 
+    // Enum for traffic light`s states
     enum TLState {
         GREEN, RED, YELLOW;
 
@@ -64,15 +62,6 @@ public class TrafficLightWrapper {
                 case RED: return Color.RED;
                 case YELLOW: return Color.YELLOW;
                 default: return Color.WHITE;
-            }
-        }
-
-        public String getStateName() {
-            switch (this) {
-                case GREEN: return "g";
-                case RED: return "r";
-                case YELLOW: return "y";
-                default: return "?";
             }
         }
     }

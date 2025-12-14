@@ -14,8 +14,10 @@ import java.util.Map;
 
 public class MainFrame {
 
+    // implement Singleton Pattern
     private static MainFrame instance;
 
+    // UI Elements
     private final JFrame frame;
     private final DashboardPanel dashboard;
     private final VisualizationPanel panel;
@@ -32,7 +34,7 @@ public class MainFrame {
     private final JButton stressTestBtn; // stress Test button
     private final JButton helpBtn; // help button
 
-
+    // Method for getting instance of MainFrame class
     public static MainFrame getInstance(String sumoConfig) {
         if (instance == null) {
             instance = new MainFrame(sumoConfig);
@@ -40,6 +42,7 @@ public class MainFrame {
         return instance;
     }
 
+    // Constructor
     private MainFrame(String sumoConfig) {
         frame = new JFrame("SUMO Custom Controller");
         panel = new VisualizationPanel();

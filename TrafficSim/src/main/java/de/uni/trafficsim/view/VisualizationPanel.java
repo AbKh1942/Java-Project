@@ -2,6 +2,7 @@ package de.uni.trafficsim.view;
 
 import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.model.RoadNetwork;
+import de.uni.trafficsim.model.SimulationFrame;
 import de.uni.trafficsim.model.TrafficLightWrapper;
 import org.eclipse.sumo.libtraci.Simulation;
 import org.eclipse.sumo.libtraci.TraCIPosition;
@@ -23,6 +24,7 @@ public class VisualizationPanel extends JPanel implements WindowListener {
     private double offsetX = 50;
     private double offsetY = 600; // Offset to handle coordinate flip
 
+    // Constructor
     public VisualizationPanel() {
         setBackground(Color.DARK_GRAY);
         // Add MouseListeners here for Pan/Zoom if desired
@@ -80,6 +82,17 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         this.controller = c;
     }
 
+    public void setRoadNetwork(RoadNetwork net) {
+        this.roadNetwork = net;
+        repaint();
+    }
+
+    public void updateFrame(SimulationFrame frame) {
+        this.currentFrame = frame;
+        repaint();
+    }
+
+    // Check whether click on the map was on a traffic light or not
     private void checkTlsClick(int screenX, int screenY) {
         // Convert Screen to World
         double worldX = (screenX - offsetX) / scale;
@@ -101,6 +114,7 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         }
     }
 
+    // Method for setting up keyboard shortcuts
     private void setupKeyBindings() {
         InputMap im = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getActionMap();
@@ -147,16 +161,6 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         repaint();
     }
 
-    public void setRoadNetwork(RoadNetwork net) {
-        this.roadNetwork = net;
-        repaint();
-    }
-
-    public void updateFrame(SimulationFrame frame) {
-        this.currentFrame = frame;
-        repaint();
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -176,7 +180,7 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         // --- 2. Draw Roads (Static) ---
         if (roadNetwork != null) {
             g2.setColor(Color.LIGHT_GRAY);
-            for (Shape s : roadNetwork.laneShapes.values()) {
+            for (Shape s : roadNetwork.getLaneShapes().values()) {
                 g2.fill(s); // Fill lane
                 g2.setColor(Color.WHITE);
                 g2.draw(s); // Outline lane
