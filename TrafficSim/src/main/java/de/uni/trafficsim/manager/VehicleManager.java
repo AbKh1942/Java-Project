@@ -4,10 +4,8 @@ import de.uni.trafficsim.model.VehicleWrapper;         //import Vehicle class
 import org.eclipse.sumo.libtraci.Vehicle;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;                           //importing Map Data structure
-import java.util.concurrent.ConcurrentHashMap;  //concurrentHashMap is thread safe, so GUI and simulation can work parallel, while SUMO works stepwise
 
 
 /*
@@ -34,7 +32,8 @@ public class VehicleManager {
         if (vehicle == null) {
             throw new IllegalArgumentException("vehicle must not be null");
         }
-        Vehicle.add(vehicle.getId(), vehicle.getRoute(), typeId, "now", "first", "0", "0");
+        // libtraci Vehicle`s methods called
+        Vehicle.add(vehicle.getId(), vehicle.getRoute(), typeId, "now", "first", "base", "0");
         Vehicle.setColor(vehicle.getId(), vehicle.getTraCIColor());
         System.out.println("Injected vehicle " + vehicle.getId() + " on route " + vehicle.getRoute());
     }

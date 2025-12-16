@@ -52,7 +52,8 @@ public class AddVehicleDialog extends JDialog {
     }
 
     private void setupRouteSelector(JPanel form, GridBagConstraints gbc) {
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         form.add(new JLabel("Select Route:"), gbc);
 
         gbc.gridx = 1;
@@ -61,7 +62,8 @@ public class AddVehicleDialog extends JDialog {
     }
 
     private void setupTypeSelector(JPanel form, GridBagConstraints gbc) {
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
         form.add(new JLabel("Vehicle Type:"), gbc);
 
         gbc.gridx = 1;
@@ -75,7 +77,8 @@ public class AddVehicleDialog extends JDialog {
     }
 
     private void setupColorPicker(JPanel form, GridBagConstraints gbc) {
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 2;
         form.add(new JLabel("Vehicle Color:"), gbc);
 
         gbc.gridx = 1;

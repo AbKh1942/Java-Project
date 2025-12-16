@@ -13,7 +13,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
-import java.util.Map;
 
 public class VisualizationPanel extends JPanel implements WindowListener {
     private RoadNetwork roadNetwork;
@@ -211,9 +210,9 @@ public class VisualizationPanel extends JPanel implements WindowListener {
 
     private void drawRoad(Graphics2D g2, Shape s) {
         g2.fill(s); // Fill lane
-        g2.setColor(Color.WHITE);
-        g2.draw(s); // Outline lane
-        g2.setColor(Color.LIGHT_GRAY);
+        g2.setColor(Color.lightGray);
+//        g2.draw(s); // Outline lane
+//        g2.setColor(Color.LIGHT_GRAY);
     }
 
     private void drawVehicle(Graphics2D g2, VehicleWrapper vehicle) {
@@ -222,7 +221,7 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         // Rotate vehicle (SUMO 0 is North/Up, Java 0 is East/Right)
         // We flip Y axis previously, so we must adjust rotation carefully.
         // Standard mapping: Java Rotation = Math.toRadians(90 - SumoAngle)
-        g2.rotate(Math.toRadians(90 - vehicle.getAngel()));
+        g2.rotate(Math.toRadians(90 - vehicle.getAngle()));
 
         g2.setColor(vehicle.getColor());
 

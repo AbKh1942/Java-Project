@@ -32,7 +32,7 @@ public class SumoController implements Runnable {
     // Random generator for mock data
     private final Random random = new Random();
 
-    // Generic Task Queue for interacting with SUMO from EDT
+    // Generic Task Queue for interacting with SUMO
     private final Queue<Runnable> taskQueue = new LinkedList<>();
 
     public SumoController(String configPath, VisualizationPanel view, DashboardPanel dashboard, JLabel timeLabel) {
@@ -227,6 +227,7 @@ public class SumoController implements Runnable {
         for (String vid : vehIds) {
             VehicleWrapper vehicle = new VehicleWrapper(
                     vid,
+                    // Call libtraci Vehicle`s methods
                     Vehicle.getPosition(vid),
                     Vehicle.getAngle(vid),
                     Vehicle.getSpeed(vid),
@@ -235,8 +236,6 @@ public class SumoController implements Runnable {
                     Vehicle.getColor(vid)
             );
             frame.vehicleManager.addVehicle(vehicle);
-//            frame.vehiclePositions.put(vid, Vehicle.getPosition(vid));
-//            frame.vehicleAngles.put(vid, Vehicle.getAngle(vid));
         }
     }
 
@@ -258,7 +257,7 @@ public class SumoController implements Runnable {
 
     private void updateStatDashboard(StringVector vehIds) {
         // We generate plausible numbers to demonstrate the UI
-        int mockTotalVehicles = vehIds.size() + random.nextInt(5); // Mix real count with noise
+        int mockTotalVehicles = vehIds.size();
         double mockAvgSpeed = 10.0 + random.nextDouble() * 15.0; // Random speed 10-25 m/s
         int mockStopped = random.nextInt(mockTotalVehicles / 2 + 1);
         double mockCo2 = mockTotalVehicles * (2.5 + random.nextDouble());

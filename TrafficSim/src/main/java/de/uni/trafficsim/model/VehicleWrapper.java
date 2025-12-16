@@ -17,7 +17,7 @@ public class VehicleWrapper {
     //only Vehicle class can access id, cannot be changed (final). Every vehicle instance has unique id
     private final String id;
     private TraCIPosition position;
-    private double angel;
+    private double angle;
     private double speed;
     private double length;
     //route id in SUMO is a string. the route id identifies a list of edges (roads)
@@ -28,7 +28,7 @@ public class VehicleWrapper {
     public VehicleWrapper(
             String id,
             TraCIPosition position,
-            double angel,
+            double angle,
             double speed,
             double length,
             String route,
@@ -36,7 +36,7 @@ public class VehicleWrapper {
     ) {
         this.id = id;
         this.position = position;
-        this.angel = angel;
+        this.angle = angle;
         this.speed = speed;
         this.length = length;
         this.route = route;
@@ -64,8 +64,8 @@ public class VehicleWrapper {
         return position;
     }
 
-    public double getAngel() {
-        return angel;
+    public double getAngle() {
+        return angle;
     }
 
     public String getRoute() {
@@ -76,6 +76,7 @@ public class VehicleWrapper {
         return color;
     }
 
+    // Get color of car
     public TraCIColor getTraCIColor() {
         TraCIColor sumoColor = new TraCIColor();
         sumoColor.setR(color.getRed());
