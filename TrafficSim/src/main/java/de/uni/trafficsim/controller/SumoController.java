@@ -1,16 +1,19 @@
 package de.uni.trafficsim.controller;
 
-import de.uni.trafficsim.model.RoadNetwork;
-import de.uni.trafficsim.model.TrafficLightWrapper;
-import de.uni.trafficsim.model.VehicleWrapper;
+import de.uni.trafficsim.model.*;
+import de.uni.trafficsim.model.TrafficLight.TrafficLightPhase;
+import de.uni.trafficsim.model.TrafficLight.TrafficLightWrapper;
 import de.uni.trafficsim.view.DashboardPanel;
-import de.uni.trafficsim.model.SimulationFrame;
+import de.uni.trafficsim.view.PhaseEditorDialog;
 import de.uni.trafficsim.view.VisualizationPanel;
 import org.eclipse.sumo.libtraci.*;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SumoController implements Runnable {
     private final String sumoConfigPath;
@@ -34,6 +37,7 @@ public class SumoController implements Runnable {
 
     // Generic Task Queue for interacting with SUMO
     private final Queue<Runnable> taskQueue = new LinkedList<>();
+
 
     public SumoController(String configPath, VisualizationPanel view, DashboardPanel dashboard, JLabel timeLabel) {
         this.sumoConfigPath = configPath;
@@ -115,6 +119,37 @@ public class SumoController implements Runnable {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public void openPhaseEditorFor(String tlsId) {
+//        System.out.println(TrafficLight.getControlledLanes(tlsId).size());
+//        for (TrafficLightWrapper tls : simulationFrame.trafficLights.stream().filter(t -> t.getId().equals(tlsId)).toList()) {
+//            System.out.println(tls.getPosition().getX() + " " + tls.getPosition().getY());
+//        }
+        SwingUtilities.invokeLater(() -> {
+            Window win = SwingUtilities.getWindowAncestor(view);
+            new PhaseEditorDialog(win, tlsId, this).setVisible(true);
+        });
+    }
+
+    public void setCustomProgram(String tlsId, List<TrafficLightPhase> phases) {
+        String currentPG = TrafficLight.getProgram(tlsId);
+        TraCILogic currentLogic = TrafficLight.getAllProgramLogics(tlsId).stream()
+                .filter(program -> program.getProgramID().equals(currentPG))
+                .toList()
+                .get(0);
+        TraCIPhaseVector newPhases = new TraCIPhaseVector();
+        for (TrafficLightPhase phase : phases) {
+            newPhases.add(new TraCIPhase(phase.getDuration(), phase.getState()));
+        }
+        currentLogic.setPhases(newPhases);
+
+        scheduleTask(() -> {
+            try {
+                TrafficLight.setProgramLogic(tlsId, currentLogic);
+                System.out.println("Applied custom program start for " + tlsId);
+            } catch(Exception e) { e.printStackTrace(); }
+        });
     }
 
     @Override

@@ -3,7 +3,7 @@ package de.uni.trafficsim.view;
 import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.model.RoadNetwork;
 import de.uni.trafficsim.model.SimulationFrame;
-import de.uni.trafficsim.model.TrafficLightWrapper;
+import de.uni.trafficsim.model.TrafficLight.TrafficLightWrapper;
 import de.uni.trafficsim.model.VehicleWrapper;
 import org.eclipse.sumo.libtraci.Simulation;
 import org.eclipse.sumo.libtraci.TraCIPosition;
@@ -27,20 +27,55 @@ public class VisualizationPanel extends JPanel implements WindowListener {
     // Constructor
     public VisualizationPanel() {
         setBackground(Color.DARK_GRAY);
-        // Add MouseListeners here for Pan/Zoom if desired
         // --- ADDED INTERACTION LOGIC ---
         MouseAdapter ma = new MouseAdapter() {
             private Point lastPoint;
+            TrafficLightWrapper pendingTls = null;
+            Timer longPressTimer;
 
             @Override
             public void mousePressed(MouseEvent e) {
                 lastPoint = e.getPoint();
-                requestFocusInWindow(); // Grab focus for keyboard zooming
+                pendingTls = getTlsAt(e.getX(), e.getY());
+
+                if (pendingTls != null) {
+                    // Start Long Press Timer (500 ms)
+                    if (longPressTimer != null && longPressTimer.isRunning()) longPressTimer.stop();
+
+                    longPressTimer = new Timer(500, evt -> {
+                        // Action for Long Press: Open Editor
+                        if (pendingTls != null && controller != null) {
+                            controller.openPhaseEditorFor(pendingTls.getId());
+                            pendingTls = null; // Consume event
+                        }
+                    });
+                    longPressTimer.setRepeats(false);
+                    longPressTimer.start();
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                // If released before timer, it's a CLICK
+                if (longPressTimer != null && longPressTimer.isRunning()) {
+                    longPressTimer.stop();
+                    if (pendingTls != null && controller != null) {
+                        // Action for Short Click: Switch Light
+                        controller.switchTrafficLight(pendingTls);
+                    }
+                }
+                pendingTls = null;
             }
 
             @Override
             public void mouseDragged(MouseEvent e) {
                 if (lastPoint == null) return;
+
+                // Cancel click/long-press if dragging
+                if (pendingTls != null && e.getPoint().distance(lastPoint) > 5.0) {
+                    if(longPressTimer!=null) longPressTimer.stop();
+                    pendingTls = null;
+                }
 
                 // Calculate how much the mouse moved
                 int dx = e.getX() - lastPoint.x;
@@ -93,25 +128,27 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         repaint();
     }
 
-    // Check whether click on the map was on a traffic light or not
-    private void checkTlsClick(int screenX, int screenY) {
+    private TrafficLightWrapper getTlsAt(int screenX, int screenY) {
+        if (currentFrame == null) return null;
+
         // Convert Screen to World
         double worldX = (screenX - offsetX) / scale;
         double worldY = (offsetY - screenY) / scale;
 
-        double clickRadius = 5.0; // Meters
+        for (TrafficLightWrapper l : currentFrame.trafficLights) {
+            double d = Math.sqrt(Math.pow(l.getPosition().getX() - worldX, 2) + Math.pow(l.getPosition().getY() - worldY, 2));
+            if (d < 5.0) return l;
+        }
+        return null;
+    }
 
-        if (currentFrame.trafficLights != null) {
-            for (TrafficLightWrapper light : currentFrame.trafficLights) {
-                TraCIPosition pos = light.getPosition();
-                double dist = Math.sqrt(Math.pow(pos.getX() - worldX, 2) + Math.pow(pos.getY() - worldY, 2));
+    // Check whether click on the map was on a traffic light or not
+    private void checkTlsClick(int screenX, int screenY) {
+        TrafficLightWrapper tls = getTlsAt(screenX, screenY);
 
-                if (dist <= clickRadius) {
-                    System.out.println("Clicked TLS: " + light.getId());
-                    controller.switchTrafficLight(light);
-                    return;
-                }
-            }
+        if (tls != null) {
+            System.out.println("Clicked TLS: " + tls.getId());
+            controller.switchTrafficLight(tls);
         }
     }
 

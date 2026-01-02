@@ -1,7 +1,7 @@
 package de.uni.trafficsim.model;
 
 import de.uni.trafficsim.manager.VehicleManager;
-import org.eclipse.sumo.libtraci.TraCIPosition;
+import de.uni.trafficsim.model.TrafficLight.TrafficLightWrapper;
 
 import java.util.*;
 

@@ -1,4 +1,4 @@
-package de.uni.trafficsim.model;
+package de.uni.trafficsim.model.TrafficLight;
 
 import org.eclipse.sumo.libtraci.TraCIPosition;
 import org.eclipse.sumo.libtraci.TrafficLight;
