@@ -10,15 +10,22 @@ import java.util.List;
 import java.util.Map;
 
 public class RoadNetwork {
+    public static class SignalData {
+        public TraCIPosition pos;
+        public double angle;
+        public SignalData(TraCIPosition p, double a) { pos=p; angle=a; }
+    }
+
     // Map of Lane ID -> Java Shape object
     private final Map<String, Shape> laneShapes = new HashMap<>();
     // Map: TLS_ID -> List of Stop Line Positions (one per controlled lane index)
-    private final Map<String, List<TraCIPosition>> tlsStopLines = new HashMap<>();
+    public Map<String, List<SignalData>> tlsStopLines = new HashMap<>();
 
     public Map<String, Shape> getLaneShapes() {
         return laneShapes;
     }
-    public Map<String, List<TraCIPosition>> getTlsStopLines() {
+
+    public Map<String, List<SignalData>> getTlsStopLines() {
         return tlsStopLines;
     }
 
@@ -68,31 +75,64 @@ public class RoadNetwork {
         for (String tid : tlsIds) {
             // Get all lanes controlled by this TLS. The order corresponds to the state string indices.
             StringVector controlledLanes = TrafficLight.getControlledLanes(tid);
-            List<TraCIPosition> positions = new ArrayList<>();
+            List<SignalData> positions = new ArrayList<>();
 
-            if (!controlledLanes.isEmpty()) {
-                for (String laneId : controlledLanes) {
-                    TraCIPositionVector shape = Lane.getShape(laneId);
-
-                    // The traffic light is typically at the end of the lane (stop line)
-                    if (!shape.getValue().isEmpty()) {
-                        // Directly adding shape.get() stores a reference to memory that gets freed
-                        // when 'shape' (the vector) goes out of scope, causing positions to become (0,0).
-                        TraCIPosition rawPos = shape.getValue().get(shape.getValue().size() - 1);
-                        TraCIPosition pos = new TraCIPosition();
-                        pos.setX(rawPos.getX());
-                        pos.setY(rawPos.getY());
-                        positions.add(pos);
-                    } else {
-                        TraCIPosition position = new TraCIPosition();
-                        position.setX(0);
-                        position.setY(0);
-                        // Fallback if lane has no shape
-                        positions.add(position);
-                    }
-                }
-                tlsStopLines.put(tid, positions);
+            // Initialize a list with placeholders
+            List<String> laneIdsForIndex = new ArrayList<>();
+            for (String controlledLane : controlledLanes) {
+                laneIdsForIndex.add(controlledLane);
+                TraCIPosition newPos = new TraCIPosition();
+                newPos.setX(0);
+                newPos.setY(0);
+                positions.add(new SignalData(newPos, 0));
             }
+
+            // Group signal indices by their Lane ID
+            Map<String, List<Integer>> laneToIndices = new HashMap<>();
+            for (int j = 0; j < laneIdsForIndex.size(); j++) {
+                String laneId = laneIdsForIndex.get(j);
+                laneToIndices.computeIfAbsent(laneId, k -> new ArrayList<>()).add(j);
+            }
+
+            // Calculate positions with offsets for overlapping signals
+            for (Map.Entry<String, List<Integer>> entry : laneToIndices.entrySet()) {
+                String laneId = entry.getKey();
+                List<Integer> indices = entry.getValue();
+
+                TraCIPositionVector shape = Lane.getShape(laneId);
+                if (shape.getValue().size() < 2) continue;
+
+                TraCIPosition end = shape.getValue().get(shape.getValue().size() - 1);
+                TraCIPosition beforeEnd = shape.getValue().get(shape.getValue().size() - 2);
+
+                // Calculate Lane Direction
+                double dx = end.getX() - beforeEnd.getX();
+                double dy = end.getY() - beforeEnd.getY();
+                double len = Math.sqrt(dx * dx + dy * dy);
+
+                // Perpendicular vector (Right side relative to a driving direction)
+                double perpX = -dy / len;
+                double perpY = dx / len;
+                double angle = Math.toDegrees(Math.atan2(perpY, perpX));
+
+                // Spread signals out: if multiple signals on one lane, shift them
+                // e.g., spacing 1.5 m apart centered on the lane end
+                double spacing = 1.5;
+                double startOffset = -(indices.size() - 1) * spacing / 2.0;
+
+                for (int k = 0; k < indices.size(); k++) {
+                    int globalIndex = indices.get(k);
+                    double offset = startOffset + k * spacing;
+
+                    double finalX = end.getX() + perpX * offset;
+                    double finalY = end.getY() + perpY * offset;
+                    TraCIPosition newPos = new TraCIPosition();
+                    newPos.setX(finalX);
+                    newPos.setY(finalY);
+                    positions.set(globalIndex, new SignalData(newPos, angle));
+                }
+            }
+            tlsStopLines.put(tid, positions);
         }
         System.out.println("Loaded positions for " + tlsStopLines.size() + " traffic light systems.");
     }

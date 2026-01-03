@@ -22,7 +22,6 @@ public class PhaseEditorDialog extends JDialog {
         this.tlsId = tlsId;
 
         // 1. Fetch Constraints
-        // We do this immediately. If offline, it returns 0, meaning we accept first input as validity check.
         this.requiredLength = TrafficLight.getAllProgramLogics(tlsId).get(0).getPhases().get(0).getState().length();
 
         setSize(600, 450);
@@ -35,45 +34,12 @@ public class PhaseEditorDialog extends JDialog {
 
         // --- Phases Container (Scrollable Stack) ---
         phasesContainer = new JPanel();
-        phasesContainer.setLayout(new BoxLayout(phasesContainer, BoxLayout.Y_AXIS));
+        setupScroll();
 
-        JScrollPane scrollPane = new JScrollPane(phasesContainer);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        add(scrollPane, BorderLayout.CENTER);
-
-
-        String currentPG = TrafficLight.getProgram(tlsId);
-        List<TraCIPhase> phases = TrafficLight.getAllProgramLogics(tlsId).stream()
-                .filter(program -> program.getProgramID().equals(currentPG))
-                .toList()
-                .get(0)
-                .getPhases();
-
-        for (TraCIPhase ph: phases) {
-            addPhaseRow(ph.getState(), ph.getDuration());
-        }
+        setupPhaseRows();
 
         // --- Footer (Buttons) ---
-        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton addBtn = new JButton("+ Add Phase");
-        JButton cancelBtn = new JButton("Cancel");
-        JButton applyBtn = new JButton("Apply Program");
-
-        addBtn.addActionListener(e -> addPhaseRow("", 10.0));
-        cancelBtn.addActionListener(e -> dispose());
-        applyBtn.addActionListener(e -> apply());
-
-        // Left align 'Add' button
-        JPanel footerContainer = new JPanel(new BorderLayout());
-        JPanel leftFooter = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        leftFooter.add(addBtn);
-
-        footerContainer.add(leftFooter, BorderLayout.WEST);
-        footerContainer.add(footer, BorderLayout.EAST);
-        footer.add(cancelBtn);
-        footer.add(applyBtn);
-
-        add(footerContainer, BorderLayout.SOUTH);
+        setUpFooter();
     }
 
     private JPanel getJPanel(String tlsId) {
@@ -90,6 +56,27 @@ public class PhaseEditorDialog extends JDialog {
         header.add(titleLbl);
         header.add(infoLbl);
         return header;
+    }
+
+    private void setupScroll() {
+        phasesContainer.setLayout(new BoxLayout(phasesContainer, BoxLayout.Y_AXIS));
+
+        JScrollPane scrollPane = new JScrollPane(phasesContainer);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private void setupPhaseRows() {
+        String currentPG = TrafficLight.getProgram(tlsId);
+        List<TraCIPhase> phases = TrafficLight.getAllProgramLogics(tlsId).stream()
+                .filter(program -> program.getProgramID().equals(currentPG))
+                .toList()
+                .get(0)
+                .getPhases();
+
+        for (TraCIPhase ph: phases) {
+            addPhaseRow(ph.getState(), ph.getDuration());
+        }
     }
 
     private void addPhaseRow(String initialState, double initialDur) {
@@ -128,11 +115,34 @@ public class PhaseEditorDialog extends JDialog {
         phasesContainer.revalidate();
         phasesContainer.repaint();
 
-        // Auto-scroll to bottom
+        // Auto-scroll to the bottom
         SwingUtilities.invokeLater(() -> {
-            JScrollBar vertical = ((JScrollPane)phasesContainer.getParent().getParent()).getVerticalScrollBar();
+            JScrollBar vertical = ((JScrollPane) phasesContainer.getParent().getParent()).getVerticalScrollBar();
             vertical.setValue(vertical.getMaximum());
         });
+    }
+
+    private void setUpFooter() {
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton addBtn = new JButton("+ Add Phase");
+        JButton cancelBtn = new JButton("Cancel");
+        JButton applyBtn = new JButton("Apply Program");
+
+        addBtn.addActionListener(e -> addPhaseRow("", 10.0));
+        cancelBtn.addActionListener(e -> dispose());
+        applyBtn.addActionListener(e -> apply());
+
+        // Left align 'Add' button
+        JPanel footerContainer = new JPanel(new BorderLayout());
+        JPanel leftFooter = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        leftFooter.add(addBtn);
+
+        footerContainer.add(leftFooter, BorderLayout.WEST);
+        footerContainer.add(footer, BorderLayout.EAST);
+        footer.add(cancelBtn);
+        footer.add(applyBtn);
+
+        add(footerContainer, BorderLayout.SOUTH);
     }
 
     private void apply() {
@@ -145,8 +155,7 @@ public class PhaseEditorDialog extends JDialog {
         }
 
         for (int i = 0; i < rows.length; i++) {
-            if (!(rows[i] instanceof JPanel)) continue;
-            JPanel row = (JPanel) rows[i];
+            if (!(rows[i] instanceof JPanel row)) continue;
 
             JTextField txtState = (JTextField) row.getComponent(1); // Index 1 is state
             JSpinner spinDur = (JSpinner) row.getComponent(3);    // Index 3 is spinner
@@ -155,14 +164,14 @@ public class PhaseEditorDialog extends JDialog {
             double dur = (Double) spinDur.getValue();
 
             if (state.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Row " + (i+1) + ": State cannot be empty.");
+                JOptionPane.showMessageDialog(this, "Row " + (i + 1) + ": State cannot be empty.");
                 return;
             }
 
             // Validation: Length Check
             if (state.length() != requiredLength) {
                 JOptionPane.showMessageDialog(this,
-                        "Row " + (i+1) + ": Invalid state length.\n" +
+                        "Row " + (i + 1) + ": Invalid state length.\n" +
                                 "Required: " + requiredLength + "\n" +
                                 "Found: " + state.length() + " (" + state + ")");
                 return;

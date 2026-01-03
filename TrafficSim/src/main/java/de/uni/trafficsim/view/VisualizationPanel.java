@@ -13,6 +13,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 
 public class VisualizationPanel extends JPanel implements WindowListener {
     private RoadNetwork roadNetwork;
@@ -282,19 +283,17 @@ public class VisualizationPanel extends JPanel implements WindowListener {
     private void drawTrafficLight(Graphics2D g2, TrafficLightWrapper tl) {
         // Simple visualization: A circle at the junction center
         g2.setColor(tl.getColor());
-        g2.fillOval(
-                (int)(tl.getPosition().getX() - 3),
-                (int)(tl.getPosition().getY() - 3),
-                6,
-                6
-        );
+        // Draw as a rotated bar section
+        AffineTransform tx = g2.getTransform();
+        g2.translate(tl.getPosition().getX(), tl.getPosition().getY());
+        g2.rotate(Math.toRadians(tl.getAngle()));
+        // Width 1.5 (spacing), Height 0.5 (thickness)
+        Rectangle2D.Double rect = new Rectangle2D.Double(-0.75, -0.25, 1.5, 0.5);
+        g2.fill(rect);
         g2.setColor(Color.BLACK);
-        g2.drawOval(
-                (int)(tl.getPosition().getX() - 3),
-                (int)(tl.getPosition().getY() - 3),
-                6,
-                6
-        );
+        g2.setStroke(new BasicStroke(0.1f));
+        g2.draw(rect);
+        g2.setTransform(tx);
     }
 
     @Override

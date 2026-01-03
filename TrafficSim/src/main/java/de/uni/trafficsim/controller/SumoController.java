@@ -38,7 +38,6 @@ public class SumoController implements Runnable {
     // Generic Task Queue for interacting with SUMO
     private final Queue<Runnable> taskQueue = new LinkedList<>();
 
-
     public SumoController(String configPath, VisualizationPanel view, DashboardPanel dashboard, JLabel timeLabel) {
         this.sumoConfigPath = configPath;
         this.view = view;
@@ -122,10 +121,6 @@ public class SumoController implements Runnable {
     }
 
     public void openPhaseEditorFor(String tlsId) {
-//        System.out.println(TrafficLight.getControlledLanes(tlsId).size());
-//        for (TrafficLightWrapper tls : simulationFrame.trafficLights.stream().filter(t -> t.getId().equals(tlsId)).toList()) {
-//            System.out.println(tls.getPosition().getX() + " " + tls.getPosition().getY());
-//        }
         SwingUtilities.invokeLater(() -> {
             Window win = SwingUtilities.getWindowAncestor(view);
             new PhaseEditorDialog(win, tlsId, this).setVisible(true);
@@ -141,6 +136,9 @@ public class SumoController implements Runnable {
         TraCIPhaseVector newPhases = new TraCIPhaseVector();
         for (TrafficLightPhase phase : phases) {
             newPhases.add(new TraCIPhase(phase.getDuration(), phase.getState()));
+        }
+        if (currentLogic.getPhases().size() > newPhases.size()) {
+            currentLogic.setCurrentPhaseIndex(0);
         }
         currentLogic.setPhases(newPhases);
 
@@ -277,13 +275,14 @@ public class SumoController implements Runnable {
     private void fetchTrafficLights(SimulationFrame frame, StringVector tlsIds) {
         for (String tid : tlsIds) {
             String state = TrafficLight.getRedYellowGreenState(tid);
-            List<TraCIPosition> positions = roadNetwork.getTlsStopLines().get(tid);
+            List<RoadNetwork.SignalData> positions = roadNetwork.getTlsStopLines().get(tid);
             // Zip the state string with the positions
             if (positions != null) {
                 int count = Math.min(state.length(), positions.size());
                 for (int k = 0; k < count; k++) {
+                    RoadNetwork.SignalData sd = positions.get(k);
                     frame.trafficLights.add(
-                            new TrafficLightWrapper(tid, positions.get(k), state.charAt(k))
+                            new TrafficLightWrapper(tid, sd.pos, sd.angle, state.charAt(k))
                     );
                 }
             }
