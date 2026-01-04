@@ -12,6 +12,8 @@ import java.awt.*;
     private final JLabel avgSpeedLabel;
     private final JLabel stoppedVehiclesLabel;
     private final JLabel co2Label;
+    private final JLabel fuelConsumptionLabel;
+    private final JLabel arrivedLabel;
 
     // Constructor
     public DashboardPanel() {
@@ -28,7 +30,10 @@ import java.awt.*;
         totalVehiclesLabel = createStatLabel("Vehicles: 0");
         avgSpeedLabel = createStatLabel("Avg Speed: 0.0 m/s");
         stoppedVehiclesLabel = createStatLabel("Stopped: 0");
-        co2Label = createStatLabel("CO2: 0.0 mg/s");
+        co2Label = createStatLabel("CO2: 0.0 g/s");
+        fuelConsumptionLabel = createStatLabel("Fuel Con.: 0.0 g/s");
+        arrivedLabel = createStatLabel("Arrived: 0");
+
 
         add(totalVehiclesLabel);
         add(Box.createVerticalStrut(15));
@@ -37,6 +42,10 @@ import java.awt.*;
         add(stoppedVehiclesLabel);
         add(Box.createVerticalStrut(15));
         add(co2Label);
+        add(Box.createVerticalStrut(15));
+        add(fuelConsumptionLabel);
+        add(Box.createVerticalStrut(15));
+        add(arrivedLabel);
 
         add(Box.createVerticalGlue()); // Push content to top
     }
@@ -60,10 +69,19 @@ import java.awt.*;
     }
 
     // method for updating stats
-    public void updateStats(int count, double speed, int stopped, double co2) {
+    public void updateStats(
+            int count,
+            double speed,
+            int stopped,
+            double co2,
+            double fuelConsumption,
+            int arrived
+    ) {
         totalVehiclesLabel.setText("Vehicles: " + count);
         avgSpeedLabel.setText(String.format("Avg Speed: %.1f m/s", speed));
         stoppedVehiclesLabel.setText("Stopped:  " + stopped);
-        co2Label.setText(String.format("CO2:      %.1f mg", co2));
+        co2Label.setText(String.format("CO2:      %.1f g/s", co2));
+        fuelConsumptionLabel.setText(String.format("Fuel Con.: %.1f g/s", fuelConsumption));
+        arrivedLabel.setText("Arrived:  " + arrived);
     }
 }

@@ -23,8 +23,10 @@ public class VehicleWrapper {
     //route id in SUMO is a string. the route id identifies a list of edges (roads)
     private final String route;
     private final Color color;
+    private double co2;
+    private double fuel;
 
-    //Konstruktor, is called when new vehicle is created
+    //Konstruktor is called when a new vehicle is created
     public VehicleWrapper(
             String id,
             TraCIPosition position,
@@ -32,7 +34,9 @@ public class VehicleWrapper {
             double speed,
             double length,
             String route,
-            TraCIColor color
+            TraCIColor color,
+            double co2,
+            double fuel
     ) {
         this.id = id;
         this.position = position;
@@ -41,6 +45,8 @@ public class VehicleWrapper {
         this.length = length;
         this.route = route;
         this.color = formatColor(color);
+        this.co2 = co2;
+        this.fuel = fuel;
     }
 
     public VehicleWrapper(String id, String route, Color color) {
@@ -76,7 +82,11 @@ public class VehicleWrapper {
         return color;
     }
 
-    // Get color of car
+    public double getCo2() { return co2; }
+
+    public double getFuel() { return fuel; }
+
+    // Get color of a car
     public TraCIColor getTraCIColor() {
         TraCIColor sumoColor = new TraCIColor();
         sumoColor.setR(color.getRed());

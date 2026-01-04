@@ -13,7 +13,6 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SumoController implements Runnable {
     private final String sumoConfigPath;
@@ -27,7 +26,7 @@ public class SumoController implements Runnable {
     private volatile boolean paused = false;
     private volatile boolean stepRequested = false; // Flag for single step
 
-    //new for stress test
+    // new for stress test
     private volatile boolean stressTestRequested = false; // Stress test requested
     private volatile int stressVehiclesLeft = 0; // amount of cars generated
     private int stressVehicleCounter = 0; // Counter for vehicle ID
@@ -37,6 +36,9 @@ public class SumoController implements Runnable {
 
     // Generic Task Queue for interacting with SUMO
     private final Queue<Runnable> taskQueue = new LinkedList<>();
+
+    // Variable for storing number of arrived vehicles
+    private int arrivedVehiclesCount = 0;
 
     public SumoController(String configPath, VisualizationPanel view, DashboardPanel dashboard, JLabel timeLabel) {
         this.sumoConfigPath = configPath;
@@ -219,13 +221,13 @@ public class SumoController implements Runnable {
                     StringVector tlsIds = TrafficLight.getIDList();
                     fetchTrafficLights(simulationFrame, tlsIds);
 
-                    // 3. Update Dashboard (MOCK DATA)
-                    updateStatDashboard(vehIds);
+                    // 3. Update Dashboard
+                    updateStatDashboard(simulationFrame);
 
                     // 4. Update our map
                     view.updateFrame(simulationFrame);
 
-                    // Reset single step flag immediately after processing
+                    // Reset a single step flag immediately after processing
                     stepRequested = false;
                 }
 
@@ -266,7 +268,9 @@ public class SumoController implements Runnable {
                     Vehicle.getSpeed(vid),
                     Vehicle.getLength(vid),
                     Vehicle.getRouteID(vid),
-                    Vehicle.getColor(vid)
+                    Vehicle.getColor(vid),
+                    Vehicle.getCO2Emission(vid),
+                    Vehicle.getFuelConsumption(vid)
             );
             frame.vehicleManager.addVehicle(vehicle);
         }
@@ -289,15 +293,32 @@ public class SumoController implements Runnable {
         }
     }
 
-    private void updateStatDashboard(StringVector vehIds) {
-        // We generate plausible numbers to demonstrate the UI
-        int mockTotalVehicles = vehIds.size();
-        double mockAvgSpeed = 10.0 + random.nextDouble() * 15.0; // Random speed 10-25 m/s
-        int mockStopped = random.nextInt(mockTotalVehicles / 2 + 1);
-        double mockCo2 = mockTotalVehicles * (2.5 + random.nextDouble());
+    private void updateStatDashboard(SimulationFrame frame) {
+        int totalVehicles = frame.vehicleManager.getVehicles().size();
+        double averageSpeed = totalVehicles > 0 ? (frame.vehicleManager.getVehicles().stream()
+                .map(VehicleWrapper::getSpeed)
+                .reduce(0.0, Double::sum) / totalVehicles) : 0.0;
+        long stopped = frame.vehicleManager.getVehicles().stream()
+                .map(VehicleWrapper::getSpeed)
+                .filter(speed -> speed < 0.1)
+                .count();
+        double totalCo2 = frame.vehicleManager.getVehicles().stream()
+                .map(VehicleWrapper::getCo2)
+                .reduce(0.0, Double::sum) / 1000.0;
+        double totalFuelConsumption = frame.vehicleManager.getVehicles().stream()
+                .map(VehicleWrapper::getFuel)
+                .reduce(0.0, Double::sum) / 1000.0;
+        this.arrivedVehiclesCount += Simulation.getArrivedNumber();
 
         SwingUtilities.invokeLater(() ->
-                dashboard.updateStats(mockTotalVehicles, mockAvgSpeed, mockStopped, mockCo2)
+                dashboard.updateStats(
+                        totalVehicles,
+                        averageSpeed,
+                        (int)stopped,
+                        totalCo2,
+                        totalFuelConsumption,
+                        this.arrivedVehiclesCount
+                )
         );
     }
 
