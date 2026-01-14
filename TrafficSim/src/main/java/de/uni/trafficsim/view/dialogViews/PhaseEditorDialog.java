@@ -1,4 +1,4 @@
-package de.uni.trafficsim.view;
+package de.uni.trafficsim.view.dialogViews;
 
 import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.model.TrafficLight.TrafficLightPhase;

@@ -4,6 +4,7 @@ import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.model.RoadNetwork;
 import de.uni.trafficsim.model.SimulationFrame;
 import de.uni.trafficsim.model.TrafficLight.TrafficLightWrapper;
+import de.uni.trafficsim.model.VehicleFilter;
 import de.uni.trafficsim.model.VehicleWrapper;
 import org.eclipse.sumo.libtraci.Simulation;
 import org.eclipse.sumo.libtraci.TraCIPosition;
@@ -19,6 +20,7 @@ public class VisualizationPanel extends JPanel implements WindowListener {
     private RoadNetwork roadNetwork;
     private SimulationFrame currentFrame;
     private SumoController controller; // Reference to controller for callbacks
+    private VehicleFilter filter;
 
     // Viewport transforms
     private double scale = 2.0; // Zoom level
@@ -118,6 +120,7 @@ public class VisualizationPanel extends JPanel implements WindowListener {
     public void setController(SumoController c) {
         this.controller = c;
     }
+    public void setFilter(VehicleFilter f) { this.filter = f; }
 
     public void setRoadNetwork(RoadNetwork net) {
         this.roadNetwork = net;
@@ -233,7 +236,9 @@ public class VisualizationPanel extends JPanel implements WindowListener {
 
             // Draw Vehicles
             for (VehicleWrapper veh : currentFrame.vehicleManager.getVehicles()) {
-                drawVehicle(g2, veh);
+                if (controller.getFilter().matches(veh)) {
+                    drawVehicle(g2, veh);
+                }
             }
         }
 
@@ -249,8 +254,6 @@ public class VisualizationPanel extends JPanel implements WindowListener {
     private void drawRoad(Graphics2D g2, Shape s) {
         g2.fill(s); // Fill lane
         g2.setColor(Color.lightGray);
-//        g2.draw(s); // Outline lane
-//        g2.setColor(Color.LIGHT_GRAY);
     }
 
     private void drawVehicle(Graphics2D g2, VehicleWrapper vehicle) {

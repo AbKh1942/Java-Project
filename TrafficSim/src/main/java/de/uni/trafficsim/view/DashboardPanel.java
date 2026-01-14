@@ -13,6 +13,7 @@ import java.awt.*;
     private final JLabel stoppedVehiclesLabel;
     private final JLabel co2Label;
     private final JLabel fuelConsumptionLabel;
+    private final JLabel visibleVehiclesLabel;
     private final JLabel arrivedLabel;
 
     // Constructor
@@ -32,6 +33,7 @@ import java.awt.*;
         stoppedVehiclesLabel = createStatLabel("Stopped: 0");
         co2Label = createStatLabel("CO2: 0.0 g/s");
         fuelConsumptionLabel = createStatLabel("Fuel Con.: 0.0 g/s");
+        visibleVehiclesLabel = createStatLabel("Visible: 0");
         arrivedLabel = createStatLabel("Arrived: 0");
 
 
@@ -44,6 +46,8 @@ import java.awt.*;
         add(co2Label);
         add(Box.createVerticalStrut(15));
         add(fuelConsumptionLabel);
+        add(Box.createVerticalStrut(15));
+        add(visibleVehiclesLabel);
         add(Box.createVerticalStrut(15));
         add(arrivedLabel);
 
@@ -75,6 +79,7 @@ import java.awt.*;
             int stopped,
             double co2,
             double fuelConsumption,
+            int visibleCount,
             int arrived
     ) {
         totalVehiclesLabel.setText("Vehicles: " + count);
@@ -82,6 +87,7 @@ import java.awt.*;
         stoppedVehiclesLabel.setText("Stopped:  " + stopped);
         co2Label.setText(String.format("CO2:      %.1f g/s", co2));
         fuelConsumptionLabel.setText(String.format("Fuel Con.: %.1f g/s", fuelConsumption));
+        visibleVehiclesLabel.setText("Visible:  " + visibleCount);
         arrivedLabel.setText("Arrived:  " + arrived);
     }
 }

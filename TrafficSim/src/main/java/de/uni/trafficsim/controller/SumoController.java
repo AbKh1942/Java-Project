@@ -4,7 +4,7 @@ import de.uni.trafficsim.model.*;
 import de.uni.trafficsim.model.TrafficLight.TrafficLightPhase;
 import de.uni.trafficsim.model.TrafficLight.TrafficLightWrapper;
 import de.uni.trafficsim.view.DashboardPanel;
-import de.uni.trafficsim.view.PhaseEditorDialog;
+import de.uni.trafficsim.view.dialogViews.PhaseEditorDialog;
 import de.uni.trafficsim.view.VisualizationPanel;
 import org.eclipse.sumo.libtraci.*;
 
@@ -37,6 +37,9 @@ public class SumoController implements Runnable {
     // Generic Task Queue for interacting with SUMO
     private final Queue<Runnable> taskQueue = new LinkedList<>();
 
+    // Filtering
+    private VehicleFilter activeFilter = new VehicleFilter();
+
     // Variable for storing number of arrived vehicles
     private int arrivedVehiclesCount = 0;
 
@@ -52,6 +55,7 @@ public class SumoController implements Runnable {
     public List<String> getAvailableRoutes() {
         return simulationFrame.availableRoutes;
     }
+
     public List<String> getAvailableTypes() {
         return simulationFrame.availableTypes;
     }
@@ -59,9 +63,11 @@ public class SumoController implements Runnable {
     public SimulationFrame getSimulationFrame() {
         return simulationFrame;
     }
+
     public void setPaused(boolean paused) {
         this.paused = paused;
     }
+
     public boolean isPaused() {
         return paused;
     }
@@ -89,6 +95,16 @@ public class SumoController implements Runnable {
         if (paused) {
             stepRequested = true;
         }
+    }
+
+    // Filtering API
+    public void setFilter(VehicleFilter filter) {
+        this.activeFilter = filter;
+        if (paused) view.repaint();
+    }
+
+    public VehicleFilter getFilter() {
+        return activeFilter;
     }
 
     // Called by the View when the user clicks a specific light
@@ -148,7 +164,9 @@ public class SumoController implements Runnable {
             try {
                 TrafficLight.setProgramLogic(tlsId, currentLogic);
                 System.out.println("Applied custom program start for " + tlsId);
-            } catch(Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
     }
 
@@ -182,6 +200,9 @@ public class SumoController implements Runnable {
             roadNetwork.loadFromSumo();
             view.setRoadNetwork(roadNetwork);
 
+            // Ensure view has filter ref
+            view.setFilter(activeFilter);
+
             // 4. Simulation Loop (Dynamic Data)
             while (running) {
                 // Execute step if:
@@ -189,7 +210,7 @@ public class SumoController implements Runnable {
                 // 2. OR Paused but a manual step was requested
                 if (!paused || stepRequested) {
                     // --- Process Task Queue (Injections, Switches, etc.) ---
-                    synchronized(this) {
+                    synchronized (this) {
                         while (!taskQueue.isEmpty()) {
                             try {
                                 taskQueue.poll().run();
@@ -308,15 +329,20 @@ public class SumoController implements Runnable {
         double totalFuelConsumption = frame.vehicleManager.getVehicles().stream()
                 .map(VehicleWrapper::getFuel)
                 .reduce(0.0, Double::sum) / 1000.0;
+        long visibleCount = frame.vehicleManager.getVehicles().stream()
+                .filter(v -> activeFilter.matches(v))
+                .count();
         this.arrivedVehiclesCount += Simulation.getArrivedNumber();
+
 
         SwingUtilities.invokeLater(() ->
                 dashboard.updateStats(
                         totalVehicles,
                         averageSpeed,
-                        (int)stopped,
+                        (int) stopped,
                         totalCo2,
                         totalFuelConsumption,
+                        (int )visibleCount,
                         this.arrivedVehiclesCount
                 )
         );
