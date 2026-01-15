@@ -7,6 +7,9 @@ public final class StatsCollector {
     private final SumoEdgeApi edgeApi;                      //for reading edge-data from SUMO
     private final List<String> edgeIds;
 
+    private double sumCo2 = 0.0;
+    private double sumFuel = 0.0;
+
     //Constructor
     public StatsCollector(SumoEdgeApi edgeApi) {
         this.edgeApi = Objects.requireNonNull(edgeApi);
@@ -21,11 +24,8 @@ public final class StatsCollector {
 
         int totalVehicles = vehicles.size();                //get vehicle count from vehicle manager
 
-
         double sumSpeed = 0.0;
         int stoppedVehicles = 0;
-        double sumCo2 = 0.0;
-        double sumFuel = 0.0;
 
         for (VehicleWrapper v : vehicles) { //for each vehicleWrapper Object in the collection vehicles
             //cumulative speed
@@ -38,8 +38,8 @@ public final class StatsCollector {
             }
 
             //cummulative emmisions and fuel
-            sumCo2 = sumCo2 + v.getCo2();       //get Co2 from SUMO
-            sumFuel = sumFuel + v.getFuel();    //get Fuel from SUMO
+            sumCo2 += v.getCo2() / 1_000_000.0;       //get Co2 from SUMO
+            sumFuel += v.getFuel() / 1_000_000.0;    //get Fuel from SUMO
         }
 
         //global average speed
@@ -50,13 +50,23 @@ public final class StatsCollector {
             globalAvgSpeedMs = sumSpeed / totalVehicles;
         }
 
-        //co2 and Fuel in kg?
-        double totalCo2Kg = sumCo2 / 1000.0;
-        double totalFuelL = sumFuel / 1000.0;
-
-
-
         //Per-edge Snapshots
+        Map<String, EdgeSnapshot> edges = getStringEdgeSnapshotMap();
+
+        //build Snapshot
+        return new StatsSnapshot(
+                simTimeSec,
+                globalAvgSpeedMs,
+                totalVehicles,
+                stoppedVehicles,
+                sumCo2,
+                sumFuel,
+                arrivedVehiclesTotal,
+                Map.copyOf(edges)
+        );
+    }
+
+    private Map<String, EdgeSnapshot> getStringEdgeSnapshotMap() {
         Map<String, EdgeSnapshot> edges = new HashMap<>(edgeIds.size());                    //Mapping edgeIds to EdgeSnapshot
         for (String edgeId : edgeIds) {                                                     //for every edgeId in List
             int n = edgeApi.getLastStepVehicleNumber(edgeId);                               //n = number of vehicles in edge
@@ -78,23 +88,9 @@ public final class StatsCollector {
             } else {
                 densityPerKm = 0.0;
             }
-
-
-            edges.put(edgeId, new EdgeSnapshot(n, meanSpeedMs, occupancy, densityPerKm)); //builds EdgeSnapshot Object with
-                                                                                          //edge data and saves it in the Map
+            //builds EdgeSnapshot Object with edge data and saves it in the Map
+            edges.put(edgeId, new EdgeSnapshot(n, meanSpeedMs, occupancy, densityPerKm));
         }
-
-        //build Snapshot
-        return new StatsSnapshot(
-                simTimeSec,
-                globalAvgSpeedMs,
-                totalVehicles,
-                stoppedVehicles,
-                totalCo2Kg,
-                totalFuelL,
-                arrivedVehiclesTotal,
-                Map.copyOf(edges)
-        );
-
+        return edges;
     }
 }

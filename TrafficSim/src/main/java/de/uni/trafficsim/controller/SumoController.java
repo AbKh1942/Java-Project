@@ -70,6 +70,7 @@ public class SumoController implements Runnable {
     public List<StatsSnapshot> getStatsHistory() {
         return List.copyOf(statsHistory);
     }
+
     public void setPaused(boolean paused) {
         this.paused = paused;
     }
@@ -199,16 +200,14 @@ public class SumoController implements Runnable {
             System.out.println("Connecting to TraCI");
 
             /// If you're using Windows/Linux, you should use line 69, in other cases - use line 68 with your path.
-            //System.load("/Users/alexandrbahno/sumo/bin/liblibtracijni.jnilib");
-            System.load("/Users/johngrosch/sumo/bin/liblibsumojni.jnilib");
-            System.load("/Users/johngrosch/sumo/bin/liblibtracijni.jnilib");
-           // Simulation.preloadLibraries();
+            System.load("/Users/alexandrbahno/sumo/bin/liblibtracijni.jnilib");
+//            System.load("/Users/johngrosch/sumo/bin/liblibtracijni.jnilib");
+//            Simulation.preloadLibraries();
 
-           Simulation.start(new StringVector(cmd));
+            Simulation.start(new StringVector(cmd));
 
             statsCollector = new StatsCollector(new SumoEdgeApi());                 //creates new EdgeApi Object and hands
-                                                                                    //it to StatsCollector to read from SUMO
-
+            //it to StatsCollector to read from SUMO
             // 3. Initialization (Static Data)
             // We fetch the road network ONCE because it doesn't change.
             roadNetwork.loadFromSumo();
@@ -266,7 +265,7 @@ public class SumoController implements Runnable {
                     //6.save to Statistics history for exports
                     statsHistory.add(snap);
 
-                    updateStatDashboard(snap);
+                    updateStatDashboard(snap, simulationFrame);
 
                     StringVector tlsIds = TrafficLight.getIDList();
                     fetchTrafficLights(simulationFrame, tlsIds);
@@ -283,7 +282,7 @@ public class SumoController implements Runnable {
                 Thread.sleep(33);
             }
 
-        } catch (/*IOException |*/ InterruptedException e) {
+        } catch (InterruptedException e) {
             System.err.println("Error communicating with SUMO: " + e.getMessage());
         } finally {
             try {
@@ -302,7 +301,7 @@ public class SumoController implements Runnable {
 
         // Update UI Label (Must be done on EDT)
         SwingUtilities.invokeLater(() ->
-                timeLabel.setText(String.format("Time: %.1f s", currentTime))
+                timeLabel.setText(String.format("Time: %.1f s", Double.valueOf(currentTime)))
         );
     }
 
@@ -342,11 +341,14 @@ public class SumoController implements Runnable {
     }
 
     // New updateStatDashboard Method, All data comes from StatsSnapshot
-    private void updateStatDashboard(StatsSnapshot snap) {
+    private void updateStatDashboard(StatsSnapshot snap, SimulationFrame frame) {
+        long visibleCount = frame.vehicleManager.getVehicles().stream()
+                .filter(v -> activeFilter.matches(v))
+                .count();
 
         SwingUtilities.invokeLater(() -> {
             // Dashboard-Method, all data from StatsSnapshot
-            dashboard.updateStats(snap);
+            dashboard.updateStats(snap, (int) visibleCount);
         });
     }
 

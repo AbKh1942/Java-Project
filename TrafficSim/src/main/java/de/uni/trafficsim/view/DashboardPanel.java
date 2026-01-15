@@ -37,8 +37,8 @@ import java.awt.*;
         totalVehiclesLabel = createStatLabel("Vehicles: 0");
         avgSpeedLabel = createStatLabel("Avg Speed: 0.0 m/s");
         stoppedVehiclesLabel = createStatLabel("Stopped: 0");
-        co2Label = createStatLabel("CO2: 0.0 g/s");
-        fuelConsumptionLabel = createStatLabel("Fuel Con.: 0.0 g/s");
+        co2Label = createStatLabel("CO2: 0.0 kg");
+        fuelConsumptionLabel = createStatLabel("Fuel Con.: 0.0 kg");
         visibleVehiclesLabel = createStatLabel("Visible: 0");
         arrivedLabel = createStatLabel("Arrived: 0");
         //additional Stats (John)
@@ -99,13 +99,14 @@ import java.awt.*;
     }
 
     //One method for updating all Stats
-    public void updateStats(StatsSnapshot snap) {
+    public void updateStats(StatsSnapshot snap, int visibleVehicles) {
         totalVehiclesLabel.setText("Vehicles: " + snap.totalVehicles());
-        avgSpeedLabel.setText(String.format("Avg Speed: %.1f m/s", snap.globalAvgSpeedMs()));
+        avgSpeedLabel.setText(String.format("Avg %.1f", Double.valueOf(snap.globalAvgSpeedMs())));
         stoppedVehiclesLabel.setText("Stopped:  " + snap.stoppedVehicles());
-        co2Label.setText(String.format("CO2:      %.1f kg", snap.totalCo2Kg()));
-        fuelConsumptionLabel.setText(String.format("Fuel Con.: %.1f L", snap.totalFuelL()));
+        co2Label.setText(String.format("CO2:      %.1f kg", Double.valueOf(snap.totalCo2Kg())));
+        fuelConsumptionLabel.setText(String.format("Fuel Con.: %.1f L", Double.valueOf(snap.totalFuelL())));
         arrivedLabel.setText("Arrived:  " + snap.arrivedVehiclesTotal());
+        visibleVehiclesLabel.setText("Visible:  " + visibleVehicles);
 
         //values from Edge Snapshots
         //average density
@@ -122,8 +123,8 @@ import java.awt.*;
                 .average()
                 .orElse(0.0);
 
-        avgDensityLabel.setText(String.format("Avg Density: %.1f veh/km", avgDensity));
-        avgOccupancyLabel.setText(String.format("Avg Occup.:  %.1f %%", avgOccupancy));
+        avgDensityLabel.setText(String.format("Avg Density: %.1f veh/km", Double.valueOf(avgDensity)));
+        avgOccupancyLabel.setText(String.format("Avg Occup.:  %.1f %%", Double.valueOf(avgOccupancy)));
     }
 
         //setter method for Callback in Mainframe
