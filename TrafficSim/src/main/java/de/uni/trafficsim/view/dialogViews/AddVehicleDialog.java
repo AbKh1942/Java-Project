@@ -1,5 +1,6 @@
 package de.uni.trafficsim.view.dialogViews;
 
+import de.uni.trafficsim.App;
 import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.model.VehicleWrapper;
 import org.eclipse.sumo.libtraci.TraCIColor;
@@ -197,14 +198,13 @@ public class AddVehicleDialog extends JDialog {
                 VehicleType.setMaxSpeed(finalTypeId, speed);
                 VehicleType.setColor(finalTypeId, new TraCIColor(c.getRed(), c.getGreen(), c.getBlue(), 255));
 
-                System.out.println("Created new type: " + finalTypeId);
+                App.logger.info("Created new type: {}", finalTypeId);
             }
 
             VehicleWrapper vehicleWrapper = new VehicleWrapper(vehId, routeId, c);
             controller.getSimulationFrame().vehicleManager.addVehicleToSimulation(vehicleWrapper, finalTypeId);
         } catch (Exception ex) {
-            System.err.println("Failed to inject vehicle: " + ex.getMessage());
-            ex.printStackTrace();
+            App.logger.error("Failed to inject vehicle: {}", ex.getMessage());
         }
     }
 }

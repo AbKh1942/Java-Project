@@ -1,6 +1,9 @@
 package de.uni.trafficsim;
 
+
 import de.uni.trafficsim.view.MainFrame;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,6 +14,8 @@ import java.awt.*;
  */
 public class App 
 {
+    public static Logger logger = LogManager.getLogger(App.class);
+
     public static void main( String[] args )
     {
         setupUI();

@@ -1,5 +1,6 @@
 package de.uni.trafficsim.model;
 
+import de.uni.trafficsim.App;
 import org.eclipse.sumo.libtraci.*;
 
 import java.awt.*;
@@ -38,7 +39,7 @@ public class RoadNetwork {
     }
 
     private void loadLanes() {
-        System.out.println("Loading static road network from SUMO...");
+        App.logger.info("Loading static road network from SUMO...");
 
         // 1. Get all Lane IDs from SUMO
         StringVector laneIds = Lane.getIDList();
@@ -64,12 +65,12 @@ public class RoadNetwork {
             // or we just draw the centerline. Here we create a stroked shape for thickness.
             laneShapes.put(id, new BasicStroke((float) width).createStrokedShape(path));
         }
-        System.out.println("Loaded " + laneShapes.size() + " lanes.");
+        App.logger.info("Loaded {} lanes.", laneShapes.size());
     }
 
 
     private void loadTrafficLights() {
-        System.out.println("Loading traffic light positions...");
+        App.logger.info("Loading traffic light positions...");
         StringVector tlsIds = TrafficLight.getIDList();
 
         for (String tid : tlsIds) {
@@ -134,6 +135,6 @@ public class RoadNetwork {
             }
             tlsStopLines.put(tid, positions);
         }
-        System.out.println("Loaded positions for " + tlsStopLines.size() + " traffic light systems.");
+        App.logger.info("Loaded positions for {} traffic light systems.", tlsStopLines.size());
     }
 }

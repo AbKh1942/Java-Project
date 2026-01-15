@@ -1,5 +1,6 @@
 package de.uni.trafficsim.controller;
 
+import de.uni.trafficsim.App;
 import de.uni.trafficsim.model.*;
 import de.uni.trafficsim.model.TrafficLight.TrafficLightPhase;
 import de.uni.trafficsim.model.TrafficLight.TrafficLightWrapper;
@@ -117,7 +118,7 @@ public class SumoController implements Runnable {
     // Called by the View when the user clicks a specific light
     public void switchTrafficLight(TrafficLightWrapper tl) {
         scheduleTask(tl::changeState);
-        System.out.println("Queued switch for TLS: " + tl.getId());
+        App.logger.info("Queued switch for TLS: {}", tl.getId());
     }
 
     // Thread-safe method to schedule SUMO commands
@@ -127,7 +128,6 @@ public class SumoController implements Runnable {
 
     //new function for stress Test
     public void runStressTest() {
-        //System.out.println("Stress test trigger");
         stressVehiclesLeft = 100;
         stressTestRequested = true;
     }
@@ -140,7 +140,7 @@ public class SumoController implements Runnable {
                 return routes.get(0);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            App.logger.error("Error occurred while getting any routeID\nError message: {}", e.getMessage());
         }
         return null;
     }
@@ -170,9 +170,9 @@ public class SumoController implements Runnable {
         scheduleTask(() -> {
             try {
                 TrafficLight.setProgramLogic(tlsId, currentLogic);
-                System.out.println("Applied custom program start for " + tlsId);
+                App.logger.info("Applied custom program start for {}", tlsId);
             } catch (Exception e) {
-                e.printStackTrace();
+                App.logger.error("Error while applying custom program start for {}\nError message: {}", tlsId, e.getMessage());
             }
         });
     }
@@ -182,7 +182,7 @@ public class SumoController implements Runnable {
         Process sumoProcess = null;
         try {
             // 1. Start SUMO Process (Headless Mode)
-            System.out.println("Launching SUMO...");
+            App.logger.info("Launching SUMO...");
 
             String[] cmd = {
                     "sumo",
@@ -197,7 +197,7 @@ public class SumoController implements Runnable {
             //Thread.sleep(2000);
 
             // 2. Connect via TraCI
-            System.out.println("Connecting to TraCI");
+            App.logger.info("Connecting to TraCI");
 
             /// If you're using Windows/Linux, you should use line 69, in other cases - use line 68 with your path.
             System.load("/Users/alexandrbahno/sumo/bin/liblibtracijni.jnilib");
@@ -228,7 +228,7 @@ public class SumoController implements Runnable {
                             try {
                                 taskQueue.poll().run();
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                App.logger.error("Error occurred while doing asynchronous task\nError message: {}", e.getMessage());
                             }
                         }
                     }
@@ -283,16 +283,17 @@ public class SumoController implements Runnable {
             }
 
         } catch (InterruptedException e) {
-            System.err.println("Error communicating with SUMO: " + e.getMessage());
+            App.logger.error("Error communicating with SUMO: {}", e.getMessage());
         } finally {
             try {
                 Simulation.close();
-            } catch (Exception e) { /* Ignore close errors */ }
-
+            } catch (Exception e) {
+                App.logger.error("Error occurred while running simulation\nError message: {}", e.getMessage());
+            }
             if (sumoProcess != null) {
                 sumoProcess.destroy();
             }
-            System.out.println("Simulation stopped.");
+            App.logger.info("Simulation stopped.");
         }
     }
 

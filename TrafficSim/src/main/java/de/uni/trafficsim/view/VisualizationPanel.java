@@ -1,5 +1,6 @@
 package de.uni.trafficsim.view;
 
+import de.uni.trafficsim.App;
 import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.model.RoadNetwork;
 import de.uni.trafficsim.model.SimulationFrame;
@@ -151,7 +152,7 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         TrafficLightWrapper tls = getTlsAt(screenX, screenY);
 
         if (tls != null) {
-            System.out.println("Clicked TLS: " + tls.getId());
+            App.logger.info("Clicked TLS: {}", tls.getId());
             controller.switchTrafficLight(tls);
         }
     }

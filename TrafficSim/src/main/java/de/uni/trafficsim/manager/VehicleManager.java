@@ -1,5 +1,6 @@
 package de.uni.trafficsim.manager;
 
+import de.uni.trafficsim.App;
 import de.uni.trafficsim.model.VehicleWrapper;         //import Vehicle class
 import org.eclipse.sumo.libtraci.Vehicle;
 
@@ -35,7 +36,7 @@ public class VehicleManager {
         // libtraci Vehicle`s methods called
         Vehicle.add(vehicle.getId(), vehicle.getRoute(), typeId, "now", "first", "base", "0");
         Vehicle.setColor(vehicle.getId(), vehicle.getTraCIColor());
-        System.out.println("Injected vehicle " + vehicle.getId() + " on route " + vehicle.getRoute());
+        App.logger.info("Injected vehicle {} on route {}", vehicle.getId(), vehicle.getRoute());
     }
 
     public void addVehicle(VehicleWrapper vehicle) {

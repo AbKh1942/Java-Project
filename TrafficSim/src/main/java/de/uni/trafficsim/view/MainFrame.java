@@ -1,5 +1,6 @@
 package de.uni.trafficsim.view;
 
+import de.uni.trafficsim.App;
 import de.uni.trafficsim.controller.SumoController;
 import de.uni.trafficsim.view.dialogViews.AddVehicleDialog;
 import de.uni.trafficsim.view.dialogViews.FilterDialog;
@@ -72,7 +73,7 @@ public class MainFrame {
                         "Error",
                         javax.swing.JOptionPane.ERROR_MESSAGE
                 );
-                ex.printStackTrace(); //print Error to console
+                App.logger.error("Error occurred while exporting CSV\nError message: {]", ex.getMessage());
             }
         });
 
@@ -166,7 +167,7 @@ public class MainFrame {
         );
 
         stressTestBtn.addActionListener(e -> {
-            System.out.println("Stress test clicked");
+            App.logger.info("Stress test clicked");
             controller.runStressTest();
         });
 
