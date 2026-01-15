@@ -1,5 +1,8 @@
 package de.uni.trafficsim.view;
 
+import de.uni.trafficsim.statistics.StatsSnapshot;
+import de.uni.trafficsim.statistics.EdgeSnapshot;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -14,6 +17,9 @@ import java.awt.*;
     private final JLabel co2Label;
     private final JLabel fuelConsumptionLabel;
     private final JLabel arrivedLabel;
+    private final JLabel avgDensityLabel;
+    private final JLabel avgOccupancyLabel;
+    private Runnable onExportCsv; //Callback for Export Button
 
     // Constructor
     public DashboardPanel() {
@@ -33,6 +39,9 @@ import java.awt.*;
         co2Label = createStatLabel("CO2: 0.0 g/s");
         fuelConsumptionLabel = createStatLabel("Fuel Con.: 0.0 g/s");
         arrivedLabel = createStatLabel("Arrived: 0");
+        //additional Stats (John)
+        avgDensityLabel = createStatLabel("Avg Density: - veh/km");
+        avgOccupancyLabel = createStatLabel("Avg Occup.:  - %");
 
 
         add(totalVehiclesLabel);
@@ -46,6 +55,23 @@ import java.awt.*;
         add(fuelConsumptionLabel);
         add(Box.createVerticalStrut(15));
         add(arrivedLabel);
+        //additional Stats
+        add(Box.createVerticalStrut(15));
+        add(avgDensityLabel);
+        add(Box.createVerticalStrut(15));
+        add(avgOccupancyLabel);
+
+        //Export CSV Button
+        add(Box.createVerticalStrut(20));
+
+        JButton exportBtn = new JButton("Export CSV");
+        exportBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        exportBtn.addActionListener(e -> {
+            if (onExportCsv != null) {
+                onExportCsv.run();
+            }
+        });
+        add(exportBtn);
 
         add(Box.createVerticalGlue()); // Push content to top
     }
@@ -68,20 +94,36 @@ import java.awt.*;
         return lbl;
     }
 
-    // method for updating stats
-    public void updateStats(
-            int count,
-            double speed,
-            int stopped,
-            double co2,
-            double fuelConsumption,
-            int arrived
-    ) {
-        totalVehiclesLabel.setText("Vehicles: " + count);
-        avgSpeedLabel.setText(String.format("Avg Speed: %.1f m/s", speed));
-        stoppedVehiclesLabel.setText("Stopped:  " + stopped);
-        co2Label.setText(String.format("CO2:      %.1f g/s", co2));
-        fuelConsumptionLabel.setText(String.format("Fuel Con.: %.1f g/s", fuelConsumption));
-        arrivedLabel.setText("Arrived:  " + arrived);
+    //One method for updating all Stats
+    public void updateStats(StatsSnapshot snap) {
+        totalVehiclesLabel.setText("Vehicles: " + snap.totalVehicles());
+        avgSpeedLabel.setText(String.format("Avg Speed: %.1f m/s", snap.globalAvgSpeedMs()));
+        stoppedVehiclesLabel.setText("Stopped:  " + snap.stoppedVehicles());
+        co2Label.setText(String.format("CO2:      %.1f kg", snap.totalCo2Kg()));
+        fuelConsumptionLabel.setText(String.format("Fuel Con.: %.1f L", snap.totalFuelL()));
+        arrivedLabel.setText("Arrived:  " + snap.arrivedVehiclesTotal());
+
+        //values from Edge Snapshots
+        //average density
+        double avgDensity = snap.edges().values().stream()          //gets all EdgeSnapshot Objects from Map and turns it into datastream
+                .mapToDouble(EdgeSnapshot::densityPerKm)            //takes density as double
+                .filter(v -> v >= 0)
+                .average()                                          //calculates average of all densities
+                .orElse(0.0);                                 //if no valid values
+
+        //average Occupancy
+        double avgOccupancy = snap.edges().values().stream()
+                .mapToDouble(EdgeSnapshot::occupancyPercent)
+                .filter(v -> v >= 0)
+                .average()
+                .orElse(0.0);
+
+        avgDensityLabel.setText(String.format("Avg Density: %.1f veh/km", avgDensity));
+        avgOccupancyLabel.setText(String.format("Avg Occup.:  %.1f %%", avgOccupancy));
+    }
+
+        //setter method for Callback in Mainframe
+    public void setOnExportCsv(Runnable onExportCsv) {
+        this.onExportCsv = onExportCsv;
     }
 }

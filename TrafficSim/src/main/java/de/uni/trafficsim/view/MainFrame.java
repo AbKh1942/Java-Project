@@ -9,8 +9,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.awt.Desktop;
-import java.util.HashMap;
-import java.util.Map;
+
 
 public class MainFrame {
 
@@ -46,9 +45,35 @@ public class MainFrame {
     private MainFrame(String sumoConfig) {
         frame = new JFrame("SUMO Custom Controller");
         panel = new VisualizationPanel();
-        dashboard = new DashboardPanel();
         timeLabel = new JLabel("Time: 0.0 s");
+
+        //new, for csv export
+        dashboard = new DashboardPanel();
         controller = new SumoController(sumoConfig, panel, dashboard, timeLabel);
+
+        //new, for csv export
+        dashboard.setOnExportCsv(() -> { //Function gets called when user presses export csv
+            try {
+                java.nio.file.Path file =
+                        de.uni.trafficsim.statistics.export.StatsCsvExporter.exportGlobalCsv(controller.getStatsHistory()); // gets history and exports
+
+                javax.swing.JOptionPane.showMessageDialog( //Popup window
+                        frame,
+                        "CSV exported to:\n" + file.toAbsolutePath(),
+                        "Export successful",
+                        javax.swing.JOptionPane.INFORMATION_MESSAGE
+                );
+            } catch (Exception ex) {
+                javax.swing.JOptionPane.showMessageDialog(
+                        frame,
+                        "CSV Export failed:\n" + ex.getMessage(),
+                        "Error",
+                        javax.swing.JOptionPane.ERROR_MESSAGE
+                );
+                ex.printStackTrace(); //print Error to console
+            }
+        });
+
         panel.setController(controller);
         toolbar = new JToolBar();
         startBtn = new JButton("Start SUMO");

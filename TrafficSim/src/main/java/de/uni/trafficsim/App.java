@@ -18,9 +18,9 @@ public class App
 
     private static void setupUI() {
         // POINT THIS TO YOUR .sumocfg FILE
-//        String sumoConfig = "/Users/alexandrbahno/Desktop/Study/Java/final_project/TrafficSim/src/main/resources/sim.sumocfg";
+        String sumoConfig = "/Users/johngrosch/sumo_cfg/sim.sumocfg";
 //        String sumoConfig = "/Users/alexandrbahno/sumo/2025-11-11-15-39-28/osm.sumocfg";
-        String sumoConfig = "/Users/alexandrbahno/Downloads/sumo-scenarios-main/bologna/acosta/run.sumocfg";
+ //       String sumoConfig = "/Users/alexandrbahno/Downloads/sumo-scenarios-main/bologna/acosta/run.sumocfg";
         MainFrame frame = MainFrame.getInstance(sumoConfig);
         frame.run();
     }

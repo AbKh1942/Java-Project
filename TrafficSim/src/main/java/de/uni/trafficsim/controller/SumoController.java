@@ -7,6 +7,7 @@ import de.uni.trafficsim.view.DashboardPanel;
 import de.uni.trafficsim.view.PhaseEditorDialog;
 import de.uni.trafficsim.view.VisualizationPanel;
 import org.eclipse.sumo.libtraci.*;
+import de.uni.trafficsim.statistics.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,6 +22,8 @@ public class SumoController implements Runnable {
     private final RoadNetwork roadNetwork;
     private final JLabel timeLabel; // Reference to UI label
     private SimulationFrame simulationFrame;
+    private StatsCollector statsCollector; //for Statistics collection
+    private final List<StatsSnapshot> statsHistory = new ArrayList<>();  //List for all statistic snapshots so far -> writing to export
 
     private volatile boolean running = false;
     private volatile boolean paused = false;
@@ -59,9 +62,14 @@ public class SumoController implements Runnable {
     public SimulationFrame getSimulationFrame() {
         return simulationFrame;
     }
+
+    public List<StatsSnapshot> getStatsHistory() {
+        return List.copyOf(statsHistory);
+    }
     public void setPaused(boolean paused) {
         this.paused = paused;
     }
+
     public boolean isPaused() {
         return paused;
     }
@@ -158,24 +166,32 @@ public class SumoController implements Runnable {
         try {
             // 1. Start SUMO Process (Headless Mode)
             System.out.println("Launching SUMO...");
+
             String[] cmd = {
                     "sumo",
                     "-c", sumoConfigPath,
                     "--step-length", "0.1" // 100ms per step
             };
-            sumoProcess = Runtime.getRuntime().exec(cmd);
+
+            //Not needed, because we start via Simulation.start
+            //sumoProcess = Runtime.getRuntime().exec(cmd);
 
             // Give SUMO a moment to start up and open the port
-            Thread.sleep(2000);
+            //Thread.sleep(2000);
 
             // 2. Connect via TraCI
             System.out.println("Connecting to TraCI");
 
             /// If you're using Windows/Linux, you should use line 69, in other cases - use line 68 with your path.
-            System.load("/Users/alexandrbahno/sumo/bin/liblibtracijni.jnilib");
-//            Simulation.preloadLibraries();
+            //System.load("/Users/alexandrbahno/sumo/bin/liblibtracijni.jnilib");
+            System.load("/Users/johngrosch/sumo/bin/liblibsumojni.jnilib");
+            System.load("/Users/johngrosch/sumo/bin/liblibtracijni.jnilib");
+           // Simulation.preloadLibraries();
 
-            Simulation.start(new StringVector(cmd));
+           Simulation.start(new StringVector(cmd));
+
+            statsCollector = new StatsCollector(new SumoEdgeApi());                 //creates new EdgeApi Object and hands
+                                                                                    //it to StatsCollector to read from SUMO
 
             // 3. Initialization (Static Data)
             // We fetch the road network ONCE because it doesn't change.
@@ -218,13 +234,26 @@ public class SumoController implements Runnable {
                     StringVector vehIds = Vehicle.getIDList();
                     fetchVehicles(simulationFrame, vehIds);
 
+                    //4.Update arrived count FIRST (so the snapshot contains it)
+                    this.arrivedVehiclesCount += Simulation.getArrivedNumber();
+
+                    //5. Saving Statistic Snapshot
+                    StatsSnapshot snap = statsCollector.collect(
+                            Simulation.getTime(),
+                            simulationFrame.vehicleManager.getVehicles(),
+                            this.arrivedVehiclesCount
+                    );
+
+                    //6.save to Statistics history for exports
+                    statsHistory.add(snap);
+
+                    updateStatDashboard(snap);
+
                     StringVector tlsIds = TrafficLight.getIDList();
                     fetchTrafficLights(simulationFrame, tlsIds);
 
-                    // 3. Update Dashboard
-                    updateStatDashboard(simulationFrame);
 
-                    // 4. Update our map
+                    //7. Update our map
                     view.updateFrame(simulationFrame);
 
                     // Reset a single step flag immediately after processing
@@ -235,7 +264,7 @@ public class SumoController implements Runnable {
                 Thread.sleep(33);
             }
 
-        } catch (IOException | InterruptedException e) {
+        } catch (/*IOException |*/ InterruptedException e) {
             System.err.println("Error communicating with SUMO: " + e.getMessage());
         } finally {
             try {
@@ -293,33 +322,13 @@ public class SumoController implements Runnable {
         }
     }
 
-    private void updateStatDashboard(SimulationFrame frame) {
-        int totalVehicles = frame.vehicleManager.getVehicles().size();
-        double averageSpeed = totalVehicles > 0 ? (frame.vehicleManager.getVehicles().stream()
-                .map(VehicleWrapper::getSpeed)
-                .reduce(0.0, Double::sum) / totalVehicles) : 0.0;
-        long stopped = frame.vehicleManager.getVehicles().stream()
-                .map(VehicleWrapper::getSpeed)
-                .filter(speed -> speed < 0.1)
-                .count();
-        double totalCo2 = frame.vehicleManager.getVehicles().stream()
-                .map(VehicleWrapper::getCo2)
-                .reduce(0.0, Double::sum) / 1000.0;
-        double totalFuelConsumption = frame.vehicleManager.getVehicles().stream()
-                .map(VehicleWrapper::getFuel)
-                .reduce(0.0, Double::sum) / 1000.0;
-        this.arrivedVehiclesCount += Simulation.getArrivedNumber();
+    // New updateStatDashboard Method, All data comes from StatsSnapshot
+    private void updateStatDashboard(StatsSnapshot snap) {
 
-        SwingUtilities.invokeLater(() ->
-                dashboard.updateStats(
-                        totalVehicles,
-                        averageSpeed,
-                        (int)stopped,
-                        totalCo2,
-                        totalFuelConsumption,
-                        this.arrivedVehiclesCount
-                )
-        );
+        SwingUtilities.invokeLater(() -> {
+            // Dashboard-Method, all data from StatsSnapshot
+            dashboard.updateStats(snap);
+        });
     }
 
     private void handleStressTest() {
