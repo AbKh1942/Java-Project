@@ -16,6 +16,7 @@ import java.awt.*;
     private final JLabel stoppedVehiclesLabel;
     private final JLabel co2Label;
     private final JLabel fuelConsumptionLabel;
+    private final JLabel visibleVehiclesLabel;
     private final JLabel arrivedLabel;
     private final JLabel avgDensityLabel;
     private final JLabel avgOccupancyLabel;
@@ -38,6 +39,7 @@ import java.awt.*;
         stoppedVehiclesLabel = createStatLabel("Stopped: 0");
         co2Label = createStatLabel("CO2: 0.0 g/s");
         fuelConsumptionLabel = createStatLabel("Fuel Con.: 0.0 g/s");
+        visibleVehiclesLabel = createStatLabel("Visible: 0");
         arrivedLabel = createStatLabel("Arrived: 0");
         //additional Stats (John)
         avgDensityLabel = createStatLabel("Avg Density: - veh/km");
@@ -53,6 +55,8 @@ import java.awt.*;
         add(co2Label);
         add(Box.createVerticalStrut(15));
         add(fuelConsumptionLabel);
+        add(Box.createVerticalStrut(15));
+        add(visibleVehiclesLabel);
         add(Box.createVerticalStrut(15));
         add(arrivedLabel);
         //additional Stats

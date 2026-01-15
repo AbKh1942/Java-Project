@@ -1,6 +1,8 @@
 package de.uni.trafficsim.view;
 
 import de.uni.trafficsim.controller.SumoController;
+import de.uni.trafficsim.view.dialogViews.AddVehicleDialog;
+import de.uni.trafficsim.view.dialogViews.FilterDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,7 +11,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.awt.Desktop;
-
 
 public class MainFrame {
 
@@ -28,6 +29,7 @@ public class MainFrame {
     private final JButton stepBtn; // Added Step Button
     private final JButton stopBtn;
     private final JButton addVehicleBtn;
+    private final JButton filterBtn;
     private final JButton zoomInBtn;
     private final JButton zoomOutBtn;
     private final JButton stressTestBtn; // stress Test button
@@ -81,6 +83,7 @@ public class MainFrame {
         stepBtn = new JButton("Step");
         stopBtn = new JButton("Stop");
         addVehicleBtn = new JButton("Add Car");
+        filterBtn = new JButton("Filter");
         zoomInBtn = new JButton(" + ");
         zoomOutBtn = new JButton(" - ");
         stressTestBtn = new JButton("Stress Test"); //stress test button
@@ -112,6 +115,7 @@ public class MainFrame {
         stopBtn.setEnabled(false);
         stepBtn.setEnabled(false);
         addVehicleBtn.setEnabled(false);
+        filterBtn.setEnabled(false);
         stressTestBtn.setEnabled(false); //new
 
         startBtn.addActionListener(e -> {
@@ -121,6 +125,7 @@ public class MainFrame {
             stepBtn.setEnabled(false);
             stopBtn.setEnabled(true);
             addVehicleBtn.setEnabled(true);
+            filterBtn.setEnabled(true);
             stressTestBtn.setEnabled(true); //new
             pauseBtn.setText("Pause"); // Reset text
         });
@@ -141,6 +146,7 @@ public class MainFrame {
             stepBtn.setEnabled(false);
             stopBtn.setEnabled(false);
             addVehicleBtn.setEnabled(false);
+            filterBtn.setEnabled(false);
             stressTestBtn.setEnabled(false);
             pauseBtn.setText("Pause");
             timeLabel.setText("Time: 0.0 s"); // Reset time
@@ -154,6 +160,10 @@ public class MainFrame {
             AddVehicleDialog dialog = new AddVehicleDialog(frame, controller);
             dialog.setVisible(true);
         });
+
+        filterBtn.addActionListener(e ->
+                new FilterDialog(frame, controller).setVisible(true)
+        );
 
         stressTestBtn.addActionListener(e -> {
             System.out.println("Stress test clicked");
@@ -184,6 +194,7 @@ public class MainFrame {
         toolbar.add(stepBtn);
         toolbar.add(stopBtn);
         toolbar.add(addVehicleBtn);
+        toolbar.add(filterBtn);
         toolbar.add(stressTestBtn); //stress Test button added to toolbar in SUMO
 
         toolbar.addSeparator(); // Separator for Time
