@@ -6,6 +6,12 @@ import de.uni.trafficsim.model.VehicleFilter;
 import javax.swing.*;
 import java.awt.*;
 
+
+/**
+ * Dialog for configuring vehicle filtering options.
+ * <p>
+ * Lets the user enable filters by speed range, color and stopped state.
+ */
 public class FilterDialog extends JDialog {
     private final SumoController controller;
     private final JCheckBox enableCheck;
@@ -16,6 +22,12 @@ public class FilterDialog extends JDialog {
     private Color selectedColor = Color.YELLOW;
     private final JCheckBox stoppedCheck;
 
+    /**
+     * Creates the filter configuration dialog.
+     *
+     * @param owner parent window for positioning
+     * @param controller controller providing the current filter
+     */
     public FilterDialog(Frame owner, SumoController controller) {
         super(owner, "Filter / Group Vehicles", false);
         this.controller = controller;
@@ -57,6 +69,7 @@ public class FilterDialog extends JDialog {
         setupForm(form, speedPanel, colorPanel);
     }
 
+    // Setting up color Button
     private void setupColorButton() {
         colorBtn.setOpaque(true);
         colorBtn.setPreferredSize(new Dimension(20, 20));
@@ -71,6 +84,7 @@ public class FilterDialog extends JDialog {
         });
     }
 
+    // Assembling UI Layout
     private void setupForm(JPanel form, JPanel speedPanel, JPanel colorPanel) {
         form.add(enableCheck);
         form.add(new JSeparator());
@@ -86,6 +100,7 @@ public class FilterDialog extends JDialog {
         add(applyBtn, BorderLayout.SOUTH);
     }
 
+    // Builds new VehicleFilter from the UI values and sends it to the controller
     private void apply() {
         VehicleFilter f = new VehicleFilter();
         f.enabled = enableCheck.isSelected();

@@ -2,6 +2,12 @@ package de.uni.trafficsim.model;
 
 import java.awt.*;
 
+
+/**
+ * Defines filtering rules for vehicles in the visualization.
+ * <p>
+ * Filters by speed range, color, and stopped-only mode when enabled.
+ */
 public class VehicleFilter {
     public boolean enabled = false;
     public double minSpeed = 0.0;
@@ -9,6 +15,12 @@ public class VehicleFilter {
     public Color filterColor = null; // Replaced typeIdContains
     public boolean showStoppedOnly = false;
 
+    /**
+     * Checks whether a vehicle matches the current filter settings.
+     *
+     * @param v vehicle to test
+     * @return true if the vehicle should be shown
+     */
     public boolean matches(VehicleWrapper v) {
         if (!enabled) return true;
 

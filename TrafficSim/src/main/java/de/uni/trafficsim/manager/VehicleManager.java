@@ -6,7 +6,6 @@ import org.eclipse.sumo.libtraci.Vehicle;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;                           //importing Map Data structure
 
 
 /*
@@ -16,20 +15,28 @@ only addVehicle, removeVehicle, getVehiclebyfilter in manager
 add method getAllVehicles, that returns the whole map of ids and vehicle object
 */
 
-/*
-Holds all vehicle wrappers that are currently relevant for the simulation.
-The manager itself does not talk to TraCI. That work is handled by the
-Vehicle instances.
-*/
 
-//class for handling all vehicle entities in our simulation, used by SimulationFrame
+/**
+ * Manages vehicle wrappers for the current simulation frame.
+ * Holds all vehicle wrappers that are currently relevant for the simulation.
+ * Manager itself does not talk to TraCI, that work is handled by the vehicle instances.
+ * <p>
+ * Provides methods to store vehicles and inject new ones into SUMO.
+ */
 public class VehicleManager {
+    
     // List with all Vehicles in simulation
     private final List<VehicleWrapper> vehicles = new ArrayList<>();
 
-    //injecting new vehicle
+    /**
+     * Injects a vehicle into the SUMO simulation.
+     *
+     * @param vehicle vehicle wrapper to add
+     * @param typeId SUMO vehicle type ID
+     * @throws IllegalArgumentException if vehicle is null
+     */
     public void addVehicleToSimulation(VehicleWrapper vehicle, String typeId) {
-        //makes sure input can`t be NULL
+        // makes sure input can`t be NULL
         if (vehicle == null) {
             throw new IllegalArgumentException("vehicle must not be null");
         }
@@ -39,6 +46,11 @@ public class VehicleManager {
         App.logger.info("Injected vehicle {} on route {}", vehicle.getId(), vehicle.getRoute());
     }
 
+    /**
+     * Adds a vehicle wrapper to the local list.
+     *
+     * @param vehicle vehicle to store
+     */
     public void addVehicle(VehicleWrapper vehicle) {
         vehicles.add(vehicle);
     }
@@ -47,18 +59,15 @@ public class VehicleManager {
         return vehicles;
     }
 
-    //remove Vehicle
+    /**
+     * Removes a vehicle wrapper from the local list.
+     *
+     * @param vehicle vehicle to remove
+     * @return true if the vehicle was present and removed
+     */
     public boolean removeVehicle(VehicleWrapper vehicle) {
         //calls Java-Map method vehicles.remove() to remove entry from the list
         return vehicles.remove(vehicle);
     }
 
-    /*
-    Placeholder for logic for getting vehicles by filter
-    Will be implemented later.
-     */
-    //not implemented yet
-    public Map<String, VehicleWrapper> getVehicleByFilter() {
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
 }

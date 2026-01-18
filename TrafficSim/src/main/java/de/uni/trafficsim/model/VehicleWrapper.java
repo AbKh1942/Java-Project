@@ -6,13 +6,13 @@ import org.eclipse.sumo.libtraci.TraCIPosition;
 import java.awt.*;
 import java.util.Objects;
 
-/*
-Wrapper around a single SUMO vehicle that gives us a simplified API for our Simulation Control.
-Every get or set call pulls the latest values directly
-from the SUMO Simulation via the TraCI Interface, so all the data is up to date
- */
 
-//defining new class Vehicle, describes a single Vehicle in SUMO-Simulation
+/**
+ * Wrapper for a single SUMO vehicle with cached simulation data.
+ * <p>
+ * Holds position, speed, route, emissions, and color for rendering and stats.
+ * Pulls the latest values directly from SUMO via the TraCI Interface, so all the data is up to date.
+ */
 public class VehicleWrapper {
     //only Vehicle class can access id, cannot be changed (final). Every vehicle instance has unique id
     private final String id;
@@ -26,7 +26,20 @@ public class VehicleWrapper {
     private double co2;
     private double fuel;
 
-    //Konstruktor is called when a new vehicle is created
+    /**
+     * Constructor.
+     * Creates a fully populated vehicle wrapper from SUMO data.
+     *
+     * @param id vehicle ID
+     * @param position current position in SUMO coordinates
+     * @param angle current heading angle
+     * @param speed current speed
+     * @param length vehicle length
+     * @param route route ID
+     * @param color SUMO color value
+     * @param co2 CO2 emission value
+     * @param fuel fuel consumption value
+     */
     public VehicleWrapper(
             String id,
             TraCIPosition position,
@@ -49,6 +62,14 @@ public class VehicleWrapper {
         this.fuel = fuel;
     }
 
+    /**
+     * Constructor
+     * Creates a minimal vehicle wrapper for injection.
+     *
+     * @param id vehicle ID
+     * @param route route ID
+     * @param color display color
+     */
     public VehicleWrapper(String id, String route, Color color) {
         this.id = id;
         this.route = route;
@@ -86,7 +107,11 @@ public class VehicleWrapper {
 
     public double getFuel() { return fuel; }
 
-    // Get color of a car
+    /**
+     * Returns the vehicle color as a SUMO TraCIColor.
+     *
+     * @return color in SUMO format
+     */
     public TraCIColor getTraCIColor() {
         TraCIColor sumoColor = new TraCIColor();
         sumoColor.setR(color.getRed());
@@ -101,6 +126,12 @@ public class VehicleWrapper {
         return new Color(color.getR(), color.getG(), color.getB());
     }
 
+    /**
+     * Compares vehicles by ID.
+     *
+     * @param o other object
+     * @return true if the other object is a VehicleWrapper with the same ID
+     */
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -108,6 +139,11 @@ public class VehicleWrapper {
         return Objects.equals(id, that.id);
     }
 
+    /**
+     * Returns a hash code based on the vehicle ID.
+     *
+     * @return hash code
+     */
     @Override
     public int hashCode() {
         return Objects.hashCode(id);

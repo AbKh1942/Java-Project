@@ -10,12 +10,26 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Dialog for editing traffic light phase programs.
+ * <p>
+ * Displays current phases and allows adding/removing phases before applying
+ * the updated program via the controller.
+ */
 public class PhaseEditorDialog extends JDialog {
     private final SumoController controller;
     private final String tlsId;
     private final int requiredLength;
     private final JPanel phasesContainer;
 
+    /**
+     * Creates a phase editor dialog for a specific traffic light.
+     *
+     * @param owner parent window for modality/positioning
+     * @param tlsId traffic light system ID
+     * @param controller controller used to apply program changes
+     */
     public PhaseEditorDialog(Window owner, String tlsId, SumoController controller) {
         super(owner, "Edit Phases for " + tlsId, ModalityType.APPLICATION_MODAL);
         this.controller = controller;
@@ -42,6 +56,7 @@ public class PhaseEditorDialog extends JDialog {
         setUpFooter();
     }
 
+    // Builds header section showing traffic light id and required state length
     private JPanel getJPanel(String tlsId) {
         JPanel header = new JPanel(new GridLayout(2, 1));
         header.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -58,6 +73,7 @@ public class PhaseEditorDialog extends JDialog {
         return header;
     }
 
+    // Creates scrollable container that holds all phase rows
     private void setupScroll() {
         phasesContainer.setLayout(new BoxLayout(phasesContainer, BoxLayout.Y_AXIS));
 
@@ -66,6 +82,7 @@ public class PhaseEditorDialog extends JDialog {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    // Reads current phase list from SUMO and adds a row for each
     private void setupPhaseRows() {
         String currentPG = TrafficLight.getProgram(tlsId);
         List<TraCIPhase> phases = TrafficLight.getAllProgramLogics(tlsId).stream()
@@ -79,6 +96,7 @@ public class PhaseEditorDialog extends JDialog {
         }
     }
 
+    // Creates editable row and adds it to the list
     private void addPhaseRow(String initialState, double initialDur) {
         JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         row.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
@@ -122,6 +140,7 @@ public class PhaseEditorDialog extends JDialog {
         });
     }
 
+    // Builds bottom buttons
     private void setUpFooter() {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("+ Add Phase");
@@ -145,6 +164,7 @@ public class PhaseEditorDialog extends JDialog {
         add(footerContainer, BorderLayout.SOUTH);
     }
 
+    // Validates all rows (non-empty, correct length) and sends the new phases to the controller
     private void apply() {
         List<TrafficLightPhase> phases = new ArrayList<>();
         Component[] rows = phasesContainer.getComponents();

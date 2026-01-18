@@ -10,6 +10,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
+
+/**
+ * Dialog for injecting a new vehicle into the simulation.
+ * <p>
+ * Allows selecting a route and vehicle type, or creating a custom type,
+ * and scheduling the injection through the controller.
+ */
 public class AddVehicleDialog extends JDialog {
     private final SumoController controller;
     private JComboBox<String> routeCombo;
@@ -21,6 +28,13 @@ public class AddVehicleDialog extends JDialog {
     private JButton colorButton;
     private Color selectedColor = Color.CYAN;
 
+    /**
+     * Constructor.
+     * Creates the add-vehicle dialog.
+     *
+     * @param owner parent window for modality and positioning
+     * @param controller controller used to schedule vehicle injection
+     */
     public AddVehicleDialog(Frame owner, SumoController controller) {
         super(owner, "Inject New Vehicle", true);
         this.controller = controller;
@@ -52,6 +66,7 @@ public class AddVehicleDialog extends JDialog {
         setUpFooter();
     }
 
+    // Build "Select Route" label + dropdown.
     private void setupRouteSelector(JPanel form, GridBagConstraints gbc) {
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -62,6 +77,7 @@ public class AddVehicleDialog extends JDialog {
         form.add(routeCombo, gbc);
     }
 
+    // Build "Vehicle Type" label + dropdown.
     private void setupTypeSelector(JPanel form, GridBagConstraints gbc) {
         gbc.gridx = 0;
         gbc.gridy = 1;
@@ -77,6 +93,7 @@ public class AddVehicleDialog extends JDialog {
         form.add(typeCombo, gbc);
     }
 
+    // Add color chooser button and set initial color.
     private void setupColorPicker(JPanel form, GridBagConstraints gbc) {
         gbc.gridx = 0;
         gbc.gridy = 2;
@@ -91,6 +108,7 @@ public class AddVehicleDialog extends JDialog {
         form.add(colorButton, gbc);
     }
 
+    // Build panel for custom type fields.
     private void setupNewTypeFields(JPanel form, GridBagConstraints gbc) {
         newTypePanel = new JPanel(new GridLayout(3, 2, 5, 5));
         newTypePanel.setBorder(BorderFactory.createTitledBorder("New Type Attributes"));
@@ -115,6 +133,7 @@ public class AddVehicleDialog extends JDialog {
         add(form, BorderLayout.CENTER);
     }
 
+    // Color picker and type dropdown logic
     private void setupListeners() {
         colorButton.addActionListener(e -> {
             Color c = JColorChooser.showDialog(this, "Pick Color", selectedColor);
@@ -133,6 +152,7 @@ public class AddVehicleDialog extends JDialog {
         });
     }
 
+    // Add "add Vehicle" and "Cancel" Button (footer).
     private void setUpFooter() {
         JPanel footer = new JPanel();
         JButton addBtn = new JButton("Add Vehicle");
@@ -146,6 +166,7 @@ public class AddVehicleDialog extends JDialog {
         add(footer, BorderLayout.SOUTH);
     }
 
+    // Validates input, builds parameters, and schedules the actual injection task.
     private void injectVehicle() {
         String routeId = (String) routeCombo.getSelectedItem();
         String typeSelection = (String) typeCombo.getSelectedItem();
@@ -178,6 +199,7 @@ public class AddVehicleDialog extends JDialog {
         dispose();
     }
 
+    // runs inside Simulation Thread, calls SUMO to add vehicle to simulation.
     private void addCarToSimulation(
             boolean isNewType,
             String finalTypeId,

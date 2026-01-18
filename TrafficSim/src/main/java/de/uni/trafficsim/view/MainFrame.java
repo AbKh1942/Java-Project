@@ -11,8 +11,14 @@ import java.io.InputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.awt.Desktop;
 
+
+/**
+ * Main application window for the traffic simulation.
+ * <p>
+ * Builds and displays the Swing UI, wires toolbar actions to the
+ * simulation controller, and hosts the visualization and statistics panels.
+ */
 public class MainFrame {
 
     // implement Singleton Pattern
@@ -36,7 +42,16 @@ public class MainFrame {
     private final JButton stressTestBtn; // stress Test button
     private final JButton helpBtn; // help button
 
-    // Method for getting instance of MainFrame class
+
+/**
+ * Returns the singleton MainFrame instance, creating it if needed.
+ * <p>
+ * The SUMO configuration path is only used the first time the instance
+ * is created.
+ *
+ * @param sumoConfig path to the SUMO configuration file
+ * @return the shared MainFrame instance
+ */
     public static MainFrame getInstance(String sumoConfig) {
         if (instance == null) {
             instance = new MainFrame(sumoConfig);
@@ -92,6 +107,12 @@ public class MainFrame {
 
     }
 
+/**
+ * Starts and displays the main UI.
+ * <p>
+ * Initializes Swing components on the Event Dispatch Thread,
+ * sets up controls and layout, and makes the window visible.
+ */
     public void run() {
         SwingUtilities.invokeLater(() -> {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

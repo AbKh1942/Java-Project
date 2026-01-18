@@ -15,7 +15,15 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.Queue;
 
+
+/**
+ * Coordinates the SUMO simulation and the Swing UI.
+ * <p>
+ * Starts and steps the SUMO simulation, collects data for rendering
+ * and statistics, and exposes methods used by the UI for control.
+ */
 public class SumoController implements Runnable {
     private final String sumoConfigPath;
     private final VisualizationPanel view;
@@ -47,6 +55,15 @@ public class SumoController implements Runnable {
     // Variable for storing number of arrived vehicles
     private int arrivedVehiclesCount = 0;
 
+
+    /**
+    * Creates a controller for a SUMO simulation run.
+    *
+    * @param configPath path to the SUMO configuration file
+    * @param view visualization panel to update with simulation frames
+    * @param dashboard statistics panel to update with collected metrics
+    * @param timeLabel label to display the current simulation time
+    */
     public SumoController(String configPath, VisualizationPanel view, DashboardPanel dashboard, JLabel timeLabel) {
         this.sumoConfigPath = configPath;
         this.view = view;
@@ -80,6 +97,12 @@ public class SumoController implements Runnable {
         return paused;
     }
 
+
+    /**
+    * Starts the simulation loop in a background thread.
+    * <p>
+    * Does nothing if the controller is already running.
+    */
     public void start() {
         if (running) return;
         running = true;
@@ -87,6 +110,11 @@ public class SumoController implements Runnable {
         new Thread(this).start();
     }
 
+    /**
+    * Requests the simulation loop to stop.
+    * <p>
+    * Resets running and pause flags; the run loop exits and handles cleanup.
+    */
     public void stop() {
         running = false;
         paused = false;
@@ -98,6 +126,11 @@ public class SumoController implements Runnable {
         stressVehiclesLeft = 0;
     }
 
+    /**
+    * Requests a single simulation step while paused, so you can advance frame by frame.
+    * <p>
+    * Has no effect if the simulation is currently running.
+    */
     public void stepOnce() {
         // Only allow manual stepping if we are paused
         if (paused) {
@@ -115,18 +148,37 @@ public class SumoController implements Runnable {
         return activeFilter;
     }
 
-    // Called by the View when the user clicks a specific light
+    
+    /**
+    * Queues a request to switch a traffic light to its next phase.
+    * <p>
+    * The change is scheduled to run on the simulation thread.
+    * Called by the View when the user clicks a specific light
+    *
+    * @param tl traffic light wrapper to switch
+    */
     public void switchTrafficLight(TrafficLightWrapper tl) {
         scheduleTask(tl::changeState);
         App.logger.info("Queued switch for TLS: {}", tl.getId());
     }
 
-    // Thread-safe method to schedule SUMO commands
+    
+    /**
+    * Schedules a task to run on the simulation thread.
+    * <p>
+    * Tasks are executed during the simulation loop to keep SUMO calls thread-safe.
+    *
+    * @param task runnable task to execute
+    */
     public synchronized void scheduleTask(Runnable task) {
         taskQueue.add(task);
     }
 
-    //new function for stress Test
+    /**
+    * Requests a stress test by scheduling bulk vehicle injection.
+    * <p>
+    * The simulation loop will add vehicles over following steps.
+    */
     public void runStressTest() {
         stressVehiclesLeft = 100;
         stressTestRequested = true;
@@ -145,6 +197,13 @@ public class SumoController implements Runnable {
         return null;
     }
 
+    /**
+    * Opens the phase editor dialog for a traffic light.
+    * <p>
+    * The dialog is created on the Swing Event Dispatch Thread.
+    *
+    * @param tlsId traffic light system ID
+    */
     public void openPhaseEditorFor(String tlsId) {
         SwingUtilities.invokeLater(() -> {
             Window win = SwingUtilities.getWindowAncestor(view);
@@ -152,6 +211,15 @@ public class SumoController implements Runnable {
         });
     }
 
+    /**
+    * Applies a custom traffic light program to the given TLS.
+    * <p>
+    * Replaces the current program's phase list with the provided phases
+    * and schedules the update to run in the simulation thread and be apllied to SUMO.
+    *
+    * @param tlsId traffic light system ID
+    * @param phases ordered list of phases to apply
+    */
     public void setCustomProgram(String tlsId, List<TrafficLightPhase> phases) {
         String currentPG = TrafficLight.getProgram(tlsId);
         TraCILogic currentLogic = TrafficLight.getAllProgramLogics(tlsId).stream()
@@ -177,6 +245,13 @@ public class SumoController implements Runnable {
         });
     }
 
+
+    /**
+    * Runs the main SUMO simulation loop.
+    * <p>
+    * launches SUMO via TraCI, loads the static road network, processes queued tasks,
+    * steps the simulation, updates UI data, and collects statistics until stopped.
+    */
     @Override
     public void run() {
         Process sumoProcess = null;
@@ -200,8 +275,8 @@ public class SumoController implements Runnable {
             App.logger.info("Connecting to TraCI");
 
             /// If you're using Windows/Linux, you should use line 69, in other cases - use line 68 with your path.
-            System.load("/Users/alexandrbahno/sumo/bin/liblibtracijni.jnilib");
-//            System.load("/Users/johngrosch/sumo/bin/liblibtracijni.jnilib");
+//            System.load("/Users/alexandrbahno/sumo/bin/liblibtracijni.jnilib");
+            System.load("/Users/johngrosch/sumo/bin/liblibtracijni.jnilib");
 //            Simulation.preloadLibraries();
 
             Simulation.start(new StringVector(cmd));
@@ -210,6 +285,7 @@ public class SumoController implements Runnable {
             //it to StatsCollector to read from SUMO
             // 3. Initialization (Static Data)
             // We fetch the road network ONCE because it doesn't change.
+
             roadNetwork.loadFromSumo();
             view.setRoadNetwork(roadNetwork);
 
@@ -245,24 +321,24 @@ public class SumoController implements Runnable {
                     // 2. Fetch Data
                     simulationFrame = new SimulationFrame();
 
-                    // Cache available routes and vehicle types for dropdowns
+                    // 3. Cache available routes and vehicle types for dropdowns
                     simulationFrame.availableRoutes.addAll(Route.getIDList());
                     simulationFrame.availableTypes.addAll(VehicleType.getIDList());
 
                     StringVector vehIds = Vehicle.getIDList();
                     fetchVehicles(simulationFrame, vehIds);
 
-                    //4.Update arrived count FIRST (so the snapshot contains it)
+                    // 4.Update arrived count FIRST (so the snapshot contains it)
                     this.arrivedVehiclesCount += Simulation.getArrivedNumber();
 
-                    //5. Saving Statistic Snapshot
+                    // 5. Saving Statistic Snapshot
                     StatsSnapshot snap = statsCollector.collect(
                             Simulation.getTime(),
                             simulationFrame.vehicleManager.getVehicles(),
                             this.arrivedVehiclesCount
                     );
 
-                    //6.save to Statistics history for exports
+                    // 6.save to Statistics history for exports
                     statsHistory.add(snap);
 
                     updateStatDashboard(snap, simulationFrame);
@@ -271,7 +347,7 @@ public class SumoController implements Runnable {
                     fetchTrafficLights(simulationFrame, tlsIds);
 
 
-                    //7. Update our map
+                    // 7. Update our map
                     view.updateFrame(simulationFrame);
 
                     // Reset a single step flag immediately after processing
@@ -306,6 +382,8 @@ public class SumoController implements Runnable {
         );
     }
 
+    //Pulls all current vehicle data from SUMO (position, speed, route, emissions, etc.) 
+    // and wraps each one in a VehicleWrapper for the current SimulationFrame.
     private void fetchVehicles(SimulationFrame frame, StringVector vehIds) {
         for (String vid : vehIds) {
             VehicleWrapper vehicle = new VehicleWrapper(
@@ -324,6 +402,8 @@ public class SumoController implements Runnable {
         }
     }
 
+    //Reads the current traffic light states from SUMO and combines them with precomputed stop‑line positions 
+    // to create TrafficLightWrapper objects for the frame.
     private void fetchTrafficLights(SimulationFrame frame, StringVector tlsIds) {
         for (String tid : tlsIds) {
             String state = TrafficLight.getRedYellowGreenState(tid);
@@ -342,6 +422,7 @@ public class SumoController implements Runnable {
     }
 
     // New updateStatDashboard Method, All data comes from StatsSnapshot
+    // Computes how many vehicles are visible under the current filter, then updates the dashboard UI on the EDT with the latest StatsSnapshot.
     private void updateStatDashboard(StatsSnapshot snap, SimulationFrame frame) {
         long visibleCount = frame.vehicleManager.getVehicles().stream()
                 .filter(v -> activeFilter.matches(v))
@@ -353,6 +434,7 @@ public class SumoController implements Runnable {
         });
     }
 
+    //Injects a batch of vehicles into SUMO over multiple steps, decrementing the remaining vehicles count until stress test is done
     private void handleStressTest() {
         try {
             String routeId = getAnyRouteId();

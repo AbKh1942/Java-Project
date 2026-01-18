@@ -2,6 +2,12 @@ package de.uni.trafficsim.statistics;
 import de.uni.trafficsim.model.VehicleWrapper;
 import java.util.*;
 
+
+/**
+ * Collects aggregated simulation statistics for a single time step.
+ * <p>
+ * Computes global vehicle metrics and per-edge snapshots using a SUMO edge API.
+ */
 public final class StatsCollector {
 
     private final SumoEdgeApi edgeApi;                      //for reading edge-data from SUMO
@@ -10,13 +16,27 @@ public final class StatsCollector {
     private double sumCo2 = 0.0;
     private double sumFuel = 0.0;
 
-    //Constructor
+    /**
+     * Constructor.
+     * Creates a collector using the given edge API.
+     *
+     * @param edgeApi API used to query per-edge statistics
+     */
     public StatsCollector(SumoEdgeApi edgeApi) {
         this.edgeApi = Objects.requireNonNull(edgeApi);
         this.edgeIds = List.copyOf(edgeApi.getIdList());     //initializing edge collection, Copies edge ID list once and makes it immutable
     }
 
-    //main method: creates a snapshot row (StatsSnapshot) for a frame
+    
+    /**
+     * Main method: creates a snapshot row (StatsSnapshot) for a frame
+     * Collects statistics for the current simulation step.
+     *
+     * @param simTimeSec current simulation time in seconds
+     * @param vehicles vehicles present in the simulation
+     * @param arrivedVehiclesTotal cumulative count of arrived vehicles
+     * @return snapshot of aggregated statistics
+     */
     public StatsSnapshot collect(double simTimeSec,
                                  Collection<VehicleWrapper> vehicles,
                                  int arrivedVehiclesTotal) {
@@ -66,6 +86,16 @@ public final class StatsCollector {
         );
     }
 
+
+    /**
+     * Builds a map of per-edge statistics for the current step.
+     * <p>
+     * For each edge ID, queries SUMO for vehicle count, mean speed, occupancy,
+     * and length, computes density (vehicles per km), and stores the results
+     * in an {@link EdgeSnapshot}.
+     *
+     * @return map of edge ID to computed edge statistics
+     */
     private Map<String, EdgeSnapshot> getStringEdgeSnapshotMap() {
         Map<String, EdgeSnapshot> edges = new HashMap<>(edgeIds.size());                    //Mapping edgeIds to EdgeSnapshot
         for (String edgeId : edgeIds) {                                                     //for every edgeId in List

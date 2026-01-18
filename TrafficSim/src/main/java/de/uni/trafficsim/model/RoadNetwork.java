@@ -10,6 +10,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * Loads and stores static road and traffic light geometry from SUMO.
+ * <p>
+ * Provides lane shapes for drawing and stop-line positions for traffic lights.
+ */
 public class RoadNetwork {
     public static class SignalData {
         public TraCIPosition pos;
@@ -30,6 +36,11 @@ public class RoadNetwork {
         return tlsStopLines;
     }
 
+    /**
+     * Loads static road and traffic light geometry from SUMO.
+     * <p>
+     * Populates lane shapes and traffic light stop-line positions.
+     */
     public void loadFromSumo() {
         // 1. Load Lane Geometries
         loadLanes();
@@ -38,6 +49,7 @@ public class RoadNetwork {
         loadTrafficLights();
     }
 
+    // Reads all lane IDs from SUMO and converts each lanes shape into a Java Path
     private void loadLanes() {
         App.logger.info("Loading static road network from SUMO...");
 
@@ -69,6 +81,7 @@ public class RoadNetwork {
     }
 
 
+    // Reads traffic light IDs from SUMO, finds thr controlled lanes and computes stop-line positions and angles
     private void loadTrafficLights() {
         App.logger.info("Loading traffic light positions...");
         StringVector tlsIds = TrafficLight.getIDList();

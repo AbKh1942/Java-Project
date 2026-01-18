@@ -17,6 +17,13 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 
+
+/**
+ * Swing panel that visualizes the SUMO road network and live simulation data.
+ * <p>
+ * Handles rendering, zoom/pan interactions, and click/gesture actions
+ * for traffic lights.
+ */
 public class VisualizationPanel extends JPanel implements WindowListener {
     private RoadNetwork roadNetwork;
     private SimulationFrame currentFrame;
@@ -28,7 +35,13 @@ public class VisualizationPanel extends JPanel implements WindowListener {
     private double offsetX = 50;
     private double offsetY = 600; // Offset to handle coordinate flip
 
-    // Constructor
+    
+    /**
+    * Constructor; Creates the visualization panel and installs interaction handlers.
+    * <p>
+    * Sets defaults, registers mouse listeners for zoom/pan and light control,
+    * and configures keyboard shortcuts.
+    */
     public VisualizationPanel() {
         setBackground(Color.DARK_GRAY);
         // --- ADDED INTERACTION LOGIC ---
@@ -133,6 +146,8 @@ public class VisualizationPanel extends JPanel implements WindowListener {
         repaint();
     }
 
+    //Method that takes a screen click position and cpnverts it into the aimulations world coordinates.
+    //returns the traffic light with the smallest distance to the click postion (must be < 5 units), otherwise null.
     private TrafficLightWrapper getTlsAt(int screenX, int screenY) {
         if (currentFrame == null) return null;
 
@@ -182,11 +197,18 @@ public class VisualizationPanel extends JPanel implements WindowListener {
     }
 
     // --- Public Zoom Methods for Buttons ---
+
+    /**
+    * Zooms the view in toward the center of the panel.
+    */
     public void zoomIn() {
         // Button/Key zoom focuses on center of screen
         applyZoom(1.1, getWidth() / 2.0, getHeight() / 2.0);
     }
 
+    /**
+    * Zooms the view out toward the center of the panel.
+    */
     public void zoomOut() {
         applyZoom(1.0 / 1.1, getWidth() / 2.0, getHeight() / 2.0);
     }

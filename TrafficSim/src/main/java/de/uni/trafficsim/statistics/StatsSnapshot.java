@@ -2,7 +2,11 @@ package de.uni.trafficsim.statistics;
 import java.util.Map;
 
 
-//Stores all statistics of a simulation time step.
+/**
+ * Immutable snapshot of statistics for a single simulation step.
+ * <p>
+ * Holds global metrics and per-edge statistics.
+ */
 public record StatsSnapshot (                   //record class (pure data class), automatically creates getters
         double simulationTimeSec,              //Simulation Time in Seconds
         double globalAvgSpeedMs,               //global average speed

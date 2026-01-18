@@ -6,6 +6,12 @@ import org.eclipse.sumo.libtraci.TrafficLight;
 
 import java.awt.*;
 
+
+/**
+ * Wrapper for a SUMO traffic light signal.
+ * <p>
+ * Stores position, orientation, and current state color for rendering.
+ */
 public class TrafficLightWrapper {
     // Properties
     private final String id;
@@ -13,7 +19,15 @@ public class TrafficLightWrapper {
     private final double angle;
     private final TLState state;
 
-    // Constructor
+    /**
+     * Constructor.
+     * Creates a traffic light wrapper from SUMO state data.
+     *
+     * @param id traffic light system ID
+     * @param position position of the signal
+     * @param angle orientation angle for drawing
+     * @param state SUMO state character (e.g., G, g, y, r)
+     */
     public TrafficLightWrapper(String id, TraCIPosition position, double angle, char state) {
         this.id = id;
         this.position = position;
@@ -39,7 +53,11 @@ public class TrafficLightWrapper {
 
     public double getAngle() { return angle; }
 
-    // function for changing the state of traffic light
+    /**
+     * changes the traffic light to the next phase immediately.
+     * <p>
+     * Uses SUMO to set the current phase duration to zero.
+     */
     public void changeState() {
         try {
             // Forces immediate transition to the next phase
@@ -50,6 +68,12 @@ public class TrafficLightWrapper {
         }
     }
 
+    /**
+     * Compares this traffic light to another for equality.
+     *
+     * @param obj other object
+     * @return true if ID, state, and position match
+     */
     @Override
     public boolean equals(Object obj) {
         return obj instanceof TrafficLightWrapper &&

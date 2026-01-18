@@ -10,21 +10,38 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+
+/**
+ * Exports simulation statistics to CSV files.
+ * <p>
+ * Writes a global statistics history into a timestamped file
+ * under the user's home directory.
+ */
 public class StatsCsvExporter {
 
     //time stamp for export file
     private static final DateTimeFormatter TS =
             DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
 
-    //Export directory
+    //Export directory, builds path to TrafficSimExport folder in Users Home-directory
     private static Path exportDir() throws IOException {            //throws exception if something with directory goes wrong, i.e no access rights
         Path dir = Paths.get(System.getProperty("user.home"), "TrafficSimExports");
         Files.createDirectories(dir); // creates directory, if it doesnt already exist
         return dir;  //returns path where csv file is saved (export directory)
     }
 
-    //Csv Export - can be called from everywhere
-    //takes saved statistic history as input
+    // --- Csv Export ---
+    
+    /**
+     * Exports the global statistics history to a CSV file.
+     * takes saved statistic history as input
+     * <p>
+     * Creates the export directory if needed and writes one row per snapshot.
+     *
+     * @param history list of statistics snapshots to export
+     * @return path to the written CSV file
+     * @throws IOException if the file cannot be written
+     */
     public static Path exportGlobalCsv(List<StatsSnapshot> history) throws IOException {
         Path out = exportDir().resolve("stats_global_" + LocalDateTime.now().format(TS) + ".csv"); //creates file- / pathname
         try (BufferedWriter w = Files.newBufferedWriter(out, StandardCharsets.UTF_8,                    //creates writer w for writing text into file out. (UTF-8 Format)

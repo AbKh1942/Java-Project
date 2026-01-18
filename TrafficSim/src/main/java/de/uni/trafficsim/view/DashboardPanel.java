@@ -7,8 +7,10 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- A sidebar panel to display simulation statistics.
- **/
+ * Sidebar panel that displays live simulation statistics.
+ * <p>
+ * Shows aggregated metrics and exposes a callback for exporting CSV data.
+ */
  public class DashboardPanel extends JPanel {
     // UI Elements
     private final JLabel totalVehiclesLabel;
@@ -22,7 +24,12 @@ import java.awt.*;
     private final JLabel avgOccupancyLabel;
     private Runnable onExportCsv; //Callback for Export Button
 
-    // Constructor
+    /**
+     * Constructor
+     * Creates the statistics dashboard UI.
+     * <p>
+     * Initializes labels, layout, and the export button.
+     */
     public DashboardPanel() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setPreferredSize(new Dimension(220, 0));
@@ -41,11 +48,10 @@ import java.awt.*;
         fuelConsumptionLabel = createStatLabel("Fuel Con.: 0.0 kg");
         visibleVehiclesLabel = createStatLabel("Visible: 0");
         arrivedLabel = createStatLabel("Arrived: 0");
-        //additional Stats (John)
         avgDensityLabel = createStatLabel("Avg Density: - veh/km");
         avgOccupancyLabel = createStatLabel("Avg Occup.:  - %");
 
-
+        //adding labels for statistics
         add(totalVehiclesLabel);
         add(Box.createVerticalStrut(15));
         add(avgSpeedLabel);
@@ -59,7 +65,6 @@ import java.awt.*;
         add(visibleVehiclesLabel);
         add(Box.createVerticalStrut(15));
         add(arrivedLabel);
-        //additional Stats
         add(Box.createVerticalStrut(15));
         add(avgDensityLabel);
         add(Box.createVerticalStrut(15));
@@ -98,7 +103,12 @@ import java.awt.*;
         return lbl;
     }
 
-    //One method for updating all Stats
+    /**
+     * Updates all displayed statistics.
+     *
+     * @param snap current statistics snapshot
+     * @param visibleVehicles number of vehicles currently visible in the view
+     */
     public void updateStats(StatsSnapshot snap, int visibleVehicles) {
         totalVehiclesLabel.setText("Vehicles: " + snap.totalVehicles());
         avgSpeedLabel.setText(String.format("Avg %.1f", Double.valueOf(snap.globalAvgSpeedMs())));
@@ -127,7 +137,11 @@ import java.awt.*;
         avgOccupancyLabel.setText(String.format("Avg Occup.:  %.1f %%", Double.valueOf(avgOccupancy)));
     }
 
-        //setter method for Callback in Mainframe
+    /**
+     * Sets the callback invoked when the Export CSV button is pressed.
+     *
+     * @param onExportCsv callback to run on export
+     */
     public void setOnExportCsv(Runnable onExportCsv) {
         this.onExportCsv = onExportCsv;
     }
