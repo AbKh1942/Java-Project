@@ -26,7 +26,7 @@ public class RoadNetwork {
     // Map of Lane ID -> Java Shape object
     private final Map<String, Shape> laneShapes = new HashMap<>();
     // Map: TLS_ID -> List of Stop Line Positions (one per controlled lane index)
-    public Map<String, List<SignalData>> tlsStopLines = new HashMap<>();
+    private final Map<String, List<SignalData>> tlsStopLines = new HashMap<>();
 
     public Map<String, Shape> getLaneShapes() {
         return laneShapes;

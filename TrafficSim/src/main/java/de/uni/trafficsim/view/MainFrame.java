@@ -7,6 +7,7 @@ import de.uni.trafficsim.view.dialogViews.FilterDialog;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.io.InputStream;
 import java.io.File;
 import java.nio.file.Files;
@@ -52,22 +53,22 @@ public class MainFrame {
  * @param sumoConfig path to the SUMO configuration file
  * @return the shared MainFrame instance
  */
-    public static MainFrame getInstance(String sumoConfig) {
+    public static MainFrame getInstance() {
         if (instance == null) {
-            instance = new MainFrame(sumoConfig);
+            instance = new MainFrame();
         }
         return instance;
     }
 
     // Constructor
-    private MainFrame(String sumoConfig) {
+    private MainFrame() {
         frame = new JFrame("SUMO Custom Controller");
         panel = new VisualizationPanel();
         timeLabel = new JLabel("Time: 0.0 s");
 
         //new, for csv export
         dashboard = new DashboardPanel();
-        controller = new SumoController(sumoConfig, panel, dashboard, timeLabel);
+        controller = new SumoController(panel, dashboard, timeLabel);
 
         //new, for csv export
         dashboard.setOnExportCsv(() -> { //Function gets called when user presses export csv
@@ -118,6 +119,7 @@ public class MainFrame {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1000, 600);
 
+            setupSystemToolbar();
             setupSimulationButtons();
             setupZoomButtons();
             setupTimeLabel();
@@ -131,8 +133,33 @@ public class MainFrame {
         });
     }
 
+    private void setupSystemToolbar() {
+        JMenuBar menuBar = new JMenuBar();
+        JMenu fileMenu = new JMenu("File");
+        JMenuItem openItem = new JMenuItem("Load Configuration...");
+        fileMenu.add(openItem);
+        menuBar.add(fileMenu);
+        frame.setJMenuBar(menuBar);
+
+        ActionListener loadConfigAction = e -> {
+            JFileChooser fileChooser = new JFileChooser(new java.io.File("."));
+            fileChooser.setDialogTitle("Select SUMO Configuration File");
+            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("SUMO Config (*.sumocfg)", "sumocfg"));
+
+            if (fileChooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                String path = fileChooser.getSelectedFile().getAbsolutePath();
+                controller.setSumoConfigPath(path);
+                startBtn.setEnabled(true);
+                JOptionPane.showMessageDialog(frame, "Configuration loaded: " + fileChooser.getSelectedFile().getName());
+            }
+        };
+
+        openItem.addActionListener(loadConfigAction);
+    }
+
     private void setupSimulationButtons() {
         // Initial states
+        startBtn.setEnabled(false);
         pauseBtn.setEnabled(false);
         stopBtn.setEnabled(false);
         stepBtn.setEnabled(false);

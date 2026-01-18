@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-01-18T18:21:48.075444+01:00 by Eclipse SUMO sumo v1_24_0+1816-7f71e6754ac
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="/Users/alexandrbahno/Desktop/Study/Java/final_project/TrafficSim/./src/main/resources/sumocgf/city/osm.net.xml.gz"/>
+        <route-files value="/Users/alexandrbahno/Desktop/Study/Java/final_project/TrafficSim/./src/main/resources/sumocgf/city/osm.passenger.trips.xml"/>
+        <additional-files value="/Users/alexandrbahno/Desktop/Study/Java/final_project/TrafficSim/./src/main/resources/sumocgf/city/osm.poly.xml.gz,/Users/alexandrbahno/Desktop/Study/Java/final_project/TrafficSim/./src/main/resources/sumocgf/city/output.add.xml"/>
+    </input>
+
+    <output>
+        <tripinfo-output value="/Users/alexandrbahno/Desktop/Study/Java/final_project/TrafficSim/./src/main/resources/sumocgf/city/tripinfos.xml"/>
+        <statistic-output value="/Users/alexandrbahno/Desktop/Study/Java/final_project/TrafficSim/./src/main/resources/sumocgf/city/stats.xml"/>
+    </output>
+
+    <time>
+        <step-length value="0.1"/>
+    </time>
+
+    <processing>
+        <ignore-route-errors value="true"/>
+        <tls.actuated.jam-threshold value="30"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <traci_server>
+        <remote-port value="55639"/>
+    </traci_server>
+
+    <gui_only>
+        <gui-settings-file value="/Users/alexandrbahno/Desktop/Study/Java/final_project/TrafficSim/./src/main/resources/sumocgf/city/osm.view.xml"/>
+    </gui_only>
+
+</sumoConfiguration>

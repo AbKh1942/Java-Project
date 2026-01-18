@@ -25,10 +25,10 @@ import java.util.Queue;
  * and statistics, and exposes methods used by the UI for control.
  */
 public class SumoController implements Runnable {
-    private final String sumoConfigPath;
+    private String sumoConfigPath;
     private final VisualizationPanel view;
     private final DashboardPanel dashboard; // Reference to Dashboard
-    private final RoadNetwork roadNetwork;
+    private RoadNetwork roadNetwork;
     private final JLabel timeLabel; // Reference to UI label
     private SimulationFrame simulationFrame;
     private StatsCollector statsCollector; //for Statistics collection
@@ -59,17 +59,19 @@ public class SumoController implements Runnable {
     /**
     * Creates a controller for a SUMO simulation run.
     *
-    * @param configPath path to the SUMO configuration file
     * @param view visualization panel to update with simulation frames
     * @param dashboard statistics panel to update with collected metrics
     * @param timeLabel label to display the current simulation time
     */
-    public SumoController(String configPath, VisualizationPanel view, DashboardPanel dashboard, JLabel timeLabel) {
-        this.sumoConfigPath = configPath;
+    public SumoController(VisualizationPanel view, DashboardPanel dashboard, JLabel timeLabel) {
         this.view = view;
         this.dashboard = dashboard;
         this.timeLabel = timeLabel;
         this.roadNetwork = new RoadNetwork();
+    }
+
+    public void setSumoConfigPath(String sumoConfigPath) {
+        this.sumoConfigPath = sumoConfigPath;
     }
 
     // Helpers for the Dialog
@@ -119,6 +121,12 @@ public class SumoController implements Runnable {
         running = false;
         paused = false;
         stepRequested = false;
+
+        // Clear map
+        this.simulationFrame = new SimulationFrame();
+        this.roadNetwork = new RoadNetwork();
+        view.updateFrame(this.simulationFrame);
+        view.setRoadNetwork(this.roadNetwork);
         // Clean close is handled in the run loop
 
         //new stress test
@@ -288,9 +296,6 @@ public class SumoController implements Runnable {
 
             roadNetwork.loadFromSumo();
             view.setRoadNetwork(roadNetwork);
-
-            // Ensure view has filter ref
-            view.setFilter(activeFilter);
 
             // 4. Simulation Loop (Dynamic Data)
             while (running) {

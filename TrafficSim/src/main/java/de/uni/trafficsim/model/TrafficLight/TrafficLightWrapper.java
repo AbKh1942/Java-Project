@@ -87,13 +87,13 @@ public class TrafficLightWrapper {
         FULL_GREEN, GREEN, RED, YELLOW;
 
         public Color getColor() {
-            switch (this) {
-                case FULL_GREEN: return new Color(3, 255, 0);
-                case GREEN: return new Color(2, 179, 2);
-                case RED: return Color.RED;
-                case YELLOW: return Color.YELLOW;
-                default: return Color.WHITE;
-            }
+            return switch (this) {
+                case FULL_GREEN -> new Color(3, 255, 0);
+                case GREEN -> new Color(2, 179, 2);
+                case RED -> Color.RED;
+                case YELLOW -> Color.YELLOW;
+                default -> Color.WHITE;
+            };
         }
     }
 }

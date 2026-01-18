@@ -28,7 +28,6 @@ public class VisualizationPanel extends JPanel implements WindowListener {
     private RoadNetwork roadNetwork;
     private SimulationFrame currentFrame;
     private SumoController controller; // Reference to controller for callbacks
-    private VehicleFilter filter;
 
     // Viewport transforms
     private double scale = 2.0; // Zoom level
@@ -134,7 +133,6 @@ public class VisualizationPanel extends JPanel implements WindowListener {
     public void setController(SumoController c) {
         this.controller = c;
     }
-    public void setFilter(VehicleFilter f) { this.filter = f; }
 
     public void setRoadNetwork(RoadNetwork net) {
         this.roadNetwork = net;
